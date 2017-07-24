@@ -16,4 +16,4 @@ Just add files using common RDF formats in your repository. The data can use rel
 
 When a uri for any account is resolved for the first time `linked.guru` will issue SPARQL `LOAD` operations against its SPARQL backend to load all files with a supported file-extension into a graph named `account.linked.guru`. 
 
-In the first version the graph must be manually triggered by requesting `https://account.linked.guru/update`
+In the first version an update of the graph must be manually triggered by requesting `https://account.linked.guru/update`
