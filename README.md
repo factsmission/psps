@@ -6,7 +6,7 @@ Create a linked data site by simply pushing some files to GitHub.
 
 An instance of this service shall be running on `linked.guru`. All `*.linked.guru` names shall resolve to that host.
 
-When a URI of the form `https://account.linked.guru/path` is derefenced `linked.guru` returns an extended symmetric concise bounded description of that resource. These resource descriptions are subgraphs of the graph desulting from merging files in a repository named `linked` in the GitHub account with the name mathing the host name preceding the `linked.guru` domain.
+When a URI of the form `https://account.linked.guru/path` is derefenced `linked.guru` returns an extended symmetric concise bounded description of that resource. These resource descriptions are subgraphs of the graph desulting from merging files in a repository named `linked` in the GitHub account with the name matching the host name preceding the `linked.guru` domain.
 
 ## How to add RDF Data to the `linked` repository?
 
