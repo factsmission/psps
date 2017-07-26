@@ -24,6 +24,7 @@
 
 package com.factsmission.linked.guru;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,6 +33,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Base64;
 import java.util.Iterator;
+import org.apache.clerezza.commons.rdf.Graph;
+import org.apache.clerezza.commons.rdf.IRI;
+import org.apache.clerezza.commons.rdf.impl.utils.simple.SimpleGraph;
+import org.apache.clerezza.rdf.core.serializedform.Parser;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -41,6 +46,8 @@ public class GetRepoGraph {
 
     private final String repository;
     private final String token;
+    private final Parser parser = Parser.getInstance();
+    private final Graph graph = new SimpleGraph();
     
     GetRepoGraph(String repository, String token) {
         this.repository = repository;
@@ -72,6 +79,7 @@ public class GetRepoGraph {
         JSONObject tree = (JSONObject) commitB.get("tree");
         String treeURLString = (String) tree.get("url");
         printTree(treeURLString);
+        System.out.println(graph);
     }
 
     private void printTree(String treeURLString) throws IOException, ParseException {
@@ -90,24 +98,29 @@ public class GetRepoGraph {
             String url = (String) next.get("url");
             System.out.println("URL: " + url + " Path: " + path);
             URL stuffURL = new URL(url);
-            decodeStuff(stuffURL);
+            processFile(path, stuffURL);
         }
     }
 
-    private void decodeStuff(URL stuffURL) throws IOException, ParseException {
-        InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
-        Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
-        JSONParser parser = new JSONParser();
-        Object obj = parser.parse(stuffJsonReader);
-        JSONObject jsonObject = (JSONObject) obj;
-        String contentBase64 = (String) jsonObject.get("content");
-        if (contentBase64 != null) {
-            System.out.println("Encoded Content: " + contentBase64);
-            try {
-                String content = new String(Base64.getMimeDecoder().decode(contentBase64));
-                System.out.println(content);
-            } catch (Exception IllegalArgumentException) {
-                System.out.println("Could not Decode: Illegal Argument");
+    private void processFile(String path, URL stuffURL) throws IOException, ParseException {
+        String rdfType = getRdfFormat(path);
+        if (rdfType != null) {
+            InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
+            Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
+            JSONParser jsonParser = new JSONParser();
+            Object obj = jsonParser.parse(stuffJsonReader);
+            JSONObject jsonObject = (JSONObject) obj;
+            String contentBase64 = (String) jsonObject.get("content");
+            if (contentBase64 != null) {
+                try {
+                    String content = new String(Base64.getMimeDecoder().decode(contentBase64));
+                    InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"));
+                    parser.parse(graph, contentInputStream, rdfType, new IRI("http://example.org/"));
+                    System.out.println(content);
+                } catch (IllegalArgumentException ex) {
+                    System.out.println("Could not Decode: Illegal Argument");
+                    System.out.println("Encoded Content: " + contentBase64);
+                }
             }
         }
     }
@@ -117,5 +130,17 @@ public class GetRepoGraph {
         String authStringEnoded = Base64.getEncoder().encodeToString((token + ":").getBytes("utf-8"));
         connection.addRequestProperty("Authorization", "Basic "+authStringEnoded);
         return connection.getInputStream();
+    }
+
+    /**
+     * 
+     * @param path
+     * @return the media type of the RDF-Fomat expected based on the file-extension or null if no file-extension matching a supported type was found
+     */
+    private String getRdfFormat(String path) {
+        if (path.endsWith(".ttl")) {
+            return "text/turtle";
+        }
+        return null;
     }
 }
