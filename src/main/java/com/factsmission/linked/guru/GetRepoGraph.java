@@ -21,12 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package com.factsmission.linked.guru;
 
+import com.github.scribejava.core.builder.ServiceBuilder;
+import com.github.scribejava.core.oauth.OAuth10aService;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Iterator;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -34,13 +40,19 @@ import org.json.simple.parser.JSONParser;
 
 public class GetRepoGraph {
     
+    final static OAuth10aService service = new ServiceBuilder()
+                           .apiKey("your_api_key")
+                           .apiSecret("your_api_secret")
+                           .build(TwitterApi.instance());
+    
+
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             System.err.println("Usage: GetRepoGraph username/repository");
             System.exit(1);
         }
-        System.out.println("Loading RDF data from "+args[0]);
-        String masterURIString = "https://api.github.com/repos/"+args[0]+"/branches/master";
+        System.out.println("Loading RDF data from " + args[0]);
+        String masterURIString = "https://api.github.com/repos/" + args[0] + "/branches/master";
         URL masterURI = new URL(masterURIString);
         InputStream masterJsonStream = masterURI.openStream();
         Reader masterJsonReader = new InputStreamReader(masterJsonStream, "utf-8");
@@ -55,7 +67,7 @@ public class GetRepoGraph {
     }
 
     private static void printTree(String treeURLString) throws Exception {
-        String treeURLRecursiveString = treeURLString+"?recursive=1";
+        String treeURLRecursiveString = treeURLString + "?recursive=1";
         URL treeURLRecursive = new URL(treeURLRecursiveString);
         InputStream treeJsonStream = treeURLRecursive.openStream();
         Reader treeJsonReader = new InputStreamReader(treeJsonStream, "utf-8");
@@ -68,8 +80,28 @@ public class GetRepoGraph {
             JSONObject next = iterator.next();
             String path = (String) next.get("path");
             String url = (String) next.get("url");
-            System.out.println("URL: "+url+" Path: "+path);
+            System.out.println("URL: " + url + " Path: " + path);
+            URL stuffURL = new URL(url);
+            decodeStuff(stuffURL);
         }
     }
-    
+
+    private static void decodeStuff(URL stuffURL) throws Exception {
+        
+        InputStream stuffJsonStream = stuffURL.openStream();
+        Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
+        JSONParser parser = new JSONParser();
+        Object obj = parser.parse(stuffJsonReader);
+        JSONObject jsonObject = (JSONObject) obj;
+        String contentBase64 = (String) jsonObject.get("content");
+        if (contentBase64 != null) {
+            System.out.println("Encoded Content: " + contentBase64);
+            try {
+                String content = new String(Base64.getMimeDecoder().decode(contentBase64));
+                System.out.println(content);
+            } catch (Exception IllegalArgumentException) {
+                System.out.println("Could not Decode: Illegal Argument");
+            }
+        }
+    }
 }
