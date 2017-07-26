@@ -24,37 +24,45 @@
 
 package com.factsmission.linked.guru;
 
-import com.github.scribejava.core.builder.ServiceBuilder;
-import com.github.scribejava.core.oauth.OAuth10aService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Iterator;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 public class GetRepoGraph {
+
+    private final String repository;
+    private final String token;
     
-    final static OAuth10aService service = new ServiceBuilder()
-                           .apiKey("your_api_key")
-                           .apiSecret("your_api_secret")
-                           .build(TwitterApi.instance());
+    GetRepoGraph(String repository, String token) {
+        this.repository = repository;
+        this.token = token;
+    }
     
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 1) {
-            System.err.println("Usage: GetRepoGraph username/repository");
+        if (args.length != 2) {
+            System.err.println("Usage: GetRepoGraph <username/repository> <PersonalAccessToken>");
             System.exit(1);
         }
-        System.out.println("Loading RDF data from " + args[0]);
-        String masterURIString = "https://api.github.com/repos/" + args[0] + "/branches/master";
+        GetRepoGraph instance = new GetRepoGraph(args[0], args[1]);
+        instance.get();
+        
+    }
+    
+    private void get() throws IOException, ParseException {
+        System.out.println("Loading RDF data from " + repository);
+        String masterURIString = "https://api.github.com/repos/" + repository + "/branches/master";
         URL masterURI = new URL(masterURIString);
-        InputStream masterJsonStream = masterURI.openStream();
+        InputStream masterJsonStream = getAuthenticatedStream(masterURI);
         Reader masterJsonReader = new InputStreamReader(masterJsonStream, "utf-8");
         JSONParser parser = new JSONParser();
         Object obj = parser.parse(masterJsonReader);
@@ -66,10 +74,10 @@ public class GetRepoGraph {
         printTree(treeURLString);
     }
 
-    private static void printTree(String treeURLString) throws Exception {
+    private void printTree(String treeURLString) throws IOException, ParseException {
         String treeURLRecursiveString = treeURLString + "?recursive=1";
         URL treeURLRecursive = new URL(treeURLRecursiveString);
-        InputStream treeJsonStream = treeURLRecursive.openStream();
+        InputStream treeJsonStream = getAuthenticatedStream(treeURLRecursive);
         Reader treeJsonReader = new InputStreamReader(treeJsonStream, "utf-8");
         JSONParser parser = new JSONParser();
         Object obj = parser.parse(treeJsonReader);
@@ -86,9 +94,8 @@ public class GetRepoGraph {
         }
     }
 
-    private static void decodeStuff(URL stuffURL) throws Exception {
-        
-        InputStream stuffJsonStream = stuffURL.openStream();
+    private void decodeStuff(URL stuffURL) throws IOException, ParseException {
+        InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
         Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
         JSONParser parser = new JSONParser();
         Object obj = parser.parse(stuffJsonReader);
@@ -103,5 +110,12 @@ public class GetRepoGraph {
                 System.out.println("Could not Decode: Illegal Argument");
             }
         }
+    }
+    
+    private InputStream getAuthenticatedStream(URL url) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        String authStringEnoded = Base64.getEncoder().encodeToString((token + ":").getBytes("utf-8"));
+        connection.addRequestProperty("Authorization", "Basic "+authStringEnoded);
+        return connection.getInputStream();
     }
 }
