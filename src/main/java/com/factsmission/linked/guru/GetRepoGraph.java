@@ -25,9 +25,11 @@
 package com.factsmission.linked.guru;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -37,6 +39,7 @@ import org.apache.clerezza.commons.rdf.Graph;
 import org.apache.clerezza.commons.rdf.IRI;
 import org.apache.clerezza.commons.rdf.impl.utils.simple.SimpleGraph;
 import org.apache.clerezza.rdf.core.serializedform.Parser;
+import org.apache.clerezza.rdf.core.serializedform.Serializer;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -47,6 +50,7 @@ public class GetRepoGraph {
     private final String repository;
     private final String token;
     private final Parser parser = Parser.getInstance();
+    private final Serializer serializer = Serializer.getInstance();
     private final Graph graph = new SimpleGraph();
     
     GetRepoGraph(String repository, String token) {
@@ -96,7 +100,6 @@ public class GetRepoGraph {
             JSONObject next = iterator.next();
             String path = (String) next.get("path");
             String url = (String) next.get("url");
-            System.out.println("URL: " + url + " Path: " + path);
             URL stuffURL = new URL(url);
             processFile(path, stuffURL);
         }
@@ -104,7 +107,7 @@ public class GetRepoGraph {
 
     private void processFile(String path, URL stuffURL) throws IOException, ParseException {
         String rdfType = getRdfFormat(path);
-        if (rdfType != null) {
+        if (rdfType == "text/turtle") {
             InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
             Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
             JSONParser jsonParser = new JSONParser();
@@ -113,15 +116,25 @@ public class GetRepoGraph {
             String contentBase64 = (String) jsonObject.get("content");
             if (contentBase64 != null) {
                 try {
+                    System.out.println(" Path: " + path);
                     String content = new String(Base64.getMimeDecoder().decode(contentBase64));
                     InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"));
                     parser.parse(graph, contentInputStream, rdfType, new IRI("http://example.org/"));
+                    OutputStream serializedGraph = new ByteArrayOutputStream();
+                    serializer.serialize(serializedGraph, graph, content);
                     System.out.println(content);
                 } catch (IllegalArgumentException ex) {
+                    System.out.println("Path: " + path);
                     System.out.println("Could not Decode: Illegal Argument");
                     System.out.println("Encoded Content: " + contentBase64);
                 }
+            } else {  
+            System.out.println(" Path: " + path);
+            System.out.println("Has no content");
             }
+        }
+        if (rdfType == null) {
+            System.out.println(" Path: " + path + "\nIs no supported RFD file");
         }
     }
     
