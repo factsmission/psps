@@ -21,9 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 package com.factsmission.linked.guru;
 
+import com.hp.hpl.jena.sparql.function.library.substring;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -52,12 +52,11 @@ public class GetRepoGraph {
     private final Parser parser = Parser.getInstance();
     private final Serializer serializer = Serializer.getInstance();
     private final Graph graph = new SimpleGraph();
-    
+
     GetRepoGraph(String repository, String token) {
         this.repository = repository;
         this.token = token;
     }
-    
 
     public static void main(String[] args) throws Exception {
         if (args.length != 2) {
@@ -66,9 +65,9 @@ public class GetRepoGraph {
         }
         GetRepoGraph instance = new GetRepoGraph(args[0], args[1]);
         instance.get();
-        
+
     }
-    
+
     private void get() throws IOException, ParseException {
         System.out.println("Loading RDF data from " + repository);
         String masterURIString = "https://api.github.com/repos/" + repository + "/branches/master";
@@ -83,7 +82,7 @@ public class GetRepoGraph {
         JSONObject tree = (JSONObject) commitB.get("tree");
         String treeURLString = (String) tree.get("url");
         printTree(treeURLString);
-        System.out.println(graph);
+        serializer.serialize(System.out, graph, "application/rdf+xml");
     }
 
     private void printTree(String treeURLString) throws IOException, ParseException {
@@ -107,7 +106,7 @@ public class GetRepoGraph {
 
     private void processFile(String path, URL stuffURL) throws IOException, ParseException {
         String rdfType = getRdfFormat(path);
-        if (rdfType == "text/turtle") {
+        if (rdfType != null) {
             InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
             Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
             JSONParser jsonParser = new JSONParser();
@@ -116,39 +115,37 @@ public class GetRepoGraph {
             String contentBase64 = (String) jsonObject.get("content");
             if (contentBase64 != null) {
                 try {
-                    System.out.println(" Path: " + path);
                     String content = new String(Base64.getMimeDecoder().decode(contentBase64));
                     InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"));
-                    parser.parse(graph, contentInputStream, rdfType, new IRI("http://example.org/"));
-                    OutputStream serializedGraph = new ByteArrayOutputStream();
-                    serializer.serialize(serializedGraph, graph, content);
-                    System.out.println(content);
+                    String substring = path.substring(0, path.lastIndexOf("."));
+                    if (rdfType == "text/turtle") {
+                    parser.parse(graph, contentInputStream, rdfType, new IRI("http://example.org/" + substring));
+                    }
                 } catch (IllegalArgumentException ex) {
                     System.out.println("Path: " + path);
                     System.out.println("Could not Decode: Illegal Argument");
                     System.out.println("Encoded Content: " + contentBase64);
                 }
-            } else {  
-            System.out.println(" Path: " + path);
-            System.out.println("Has no content");
             }
         }
         if (rdfType == null) {
-            System.out.println(" Path: " + path + "\nIs no supported RFD file");
+            System.out.println(path + " is not a supported RFD file");
         }
     }
-    
+
     private InputStream getAuthenticatedStream(URL url) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         String authStringEnoded = Base64.getEncoder().encodeToString((token + ":").getBytes("utf-8"));
-        connection.addRequestProperty("Authorization", "Basic "+authStringEnoded);
+        connection.addRequestProperty("Authorization", "Basic " + authStringEnoded);
         return connection.getInputStream();
     }
 
     /**
-     * 
+     *
      * @param path
-     * @return the media type of the RDF-Fomat expected based on the file-extension or null if no file-extension matching a supported type was found
+     * @return the media type of the RDF-Fomat expected based on the
+     * file-extension or null if no file-extension matching a supported type was
+     * found
      */
     private String getRdfFormat(String path) {
         if (path.endsWith(".ttl")) {
