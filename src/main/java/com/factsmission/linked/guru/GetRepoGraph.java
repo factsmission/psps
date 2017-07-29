@@ -73,7 +73,7 @@ public class GetRepoGraph {
 
     }
 
-    private Graph get() throws IOException, ParseException {
+    public Graph get() throws IOException, ParseException {
         System.out.println("Loading RDF data from " + repository);
         String masterURIString = "https://api.github.com/repos/" + repository + "/branches/master";
         URL masterURI = new URL(masterURIString);
@@ -122,26 +122,23 @@ public class GetRepoGraph {
                 try {
                     String content = new String(Base64.getMimeDecoder().decode(contentBase64));
                     InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"));
-                    String pathSubstring = "/"+path.substring(0, path.lastIndexOf("."));
-                    String username = repository.substring(0, repository.lastIndexOf("/"));
-                    String repo = repository.substring(repository.lastIndexOf("/"), repository.length()) + ".";
-                    if (repo.equals("/linked.")) {
-                        repo = "/";
-                    }
-                    IRI baseIRI = new IRI("http:/" + repo + username + ".linked.guru"+pathSubstring); //only one dash after http because repo comes with one.
-                    if (rdfType == "text/turtle") {
-                        parser.parse(graph, contentInputStream, rdfType, baseIRI);
-                    }
+                    IRI baseIRI = constructFileBaseIRI(path);
+                    parser.parse(graph, contentInputStream, rdfType, baseIRI);
                 } catch (IllegalArgumentException ex) {
-                    /*System.out.println("Path: " + path);
-                    System.out.println("Could not Decode: Illegal Argument");
-                    System.out.println("Encoded Content: " + contentBase64);*/
+                    throw new RuntimeException("Something bad happened", ex);
                 }
             }
         }
         /*if (rdfType == null) {
         System.out.println(path + " is not a supported RFD file");
         }*/
+    }
+
+    IRI constructFileBaseIRI(String path) {
+        String pathSubstring = path.substring(0, path.lastIndexOf("."));
+        IRI repoBaseIRI = constructRepoBaseIRI(repository);
+        IRI baseIRI = new IRI(repoBaseIRI.getUnicodeString()+pathSubstring); //only one dash after http because repo comes with one.
+        return baseIRI;
     }
 
     private InputStream getAuthenticatedStream(URL url) throws IOException {
@@ -171,9 +168,19 @@ public class GetRepoGraph {
      * @return a string with utf-8
      * @throws UnsupportedEncodingException
      */
-    public static String byteToString(ByteArrayOutputStream byteArrayOutputStream) throws UnsupportedEncodingException {
+    private static String byteToString(ByteArrayOutputStream byteArrayOutputStream) throws UnsupportedEncodingException {
         byte[] bytes = byteArrayOutputStream.toByteArray();
         String str = new String(bytes, "utf-8");
         return str;
+    }
+
+    static IRI constructRepoBaseIRI(String repository) {
+        String username = repository.substring(0, repository.lastIndexOf("/"));
+        String repo = repository.substring(repository.lastIndexOf("/"), repository.length()) + ".";
+        if (repo.equals("/linked.")) {
+            repo = "/";
+        }
+        IRI baseIRI = new IRI("http:/" + repo + username + ".linked.guru/"); //only one dash after http because repo comes with one.
+        return baseIRI;
     }
 }
