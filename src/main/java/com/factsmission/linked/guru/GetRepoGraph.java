@@ -122,9 +122,15 @@ public class GetRepoGraph {
                 try {
                     String content = new String(Base64.getMimeDecoder().decode(contentBase64));
                     InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"));
-                    String substring = path.substring(0, path.lastIndexOf("."));
+                    String pathSubstring = "/"+path.substring(0, path.lastIndexOf("."));
+                    String username = repository.substring(0, repository.lastIndexOf("/"));
+                    String repo = repository.substring(repository.lastIndexOf("/"), repository.length()) + ".";
+                    if (repo.equals("/linked.")) {
+                        repo = "/";
+                    }
+                    IRI baseIRI = new IRI("http:/" + repo + username + ".linked.guru"+pathSubstring); //only one dash after http because repo comes with one.
                     if (rdfType == "text/turtle") {
-                        parser.parse(graph, contentInputStream, rdfType, new IRI("http://example.org/" + substring));
+                        parser.parse(graph, contentInputStream, rdfType, baseIRI);
                     }
                 } catch (IllegalArgumentException ex) {
                     /*System.out.println("Path: " + path);
