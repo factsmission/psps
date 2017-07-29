@@ -23,7 +23,6 @@
  */
 package com.factsmission.linked.guru;
 
-import com.hp.hpl.jena.sparql.function.library.substring;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,6 +30,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Base64;
@@ -50,7 +50,6 @@ public class GetRepoGraph {
     private final String repository;
     private final String token;
     private final Parser parser = Parser.getInstance();
-    private final Serializer serializer = Serializer.getInstance();
     private final Graph graph = new SimpleGraph();
 
     GetRepoGraph(String repository, String token) {
@@ -64,11 +63,17 @@ public class GetRepoGraph {
             System.exit(1);
         }
         GetRepoGraph instance = new GetRepoGraph(args[0], args[1]);
-        instance.get();
+        Graph g = instance.get();
+        //serializer.serialize(System.out, g, "application/rdf+xml");
+        ByteArrayOutputStream serializedStream = new ByteArrayOutputStream();
+        Serializer serializer = Serializer.getInstance();
+        serializer.serialize(serializedStream, g, "application/rdf+xml");
+        String serializedString = byteToString(serializedStream);
+        System.out.println("Voilà: " + serializedString);
 
     }
 
-    private void get() throws IOException, ParseException {
+    private Graph get() throws IOException, ParseException {
         System.out.println("Loading RDF data from " + repository);
         String masterURIString = "https://api.github.com/repos/" + repository + "/branches/master";
         URL masterURI = new URL(masterURIString);
@@ -82,7 +87,7 @@ public class GetRepoGraph {
         JSONObject tree = (JSONObject) commitB.get("tree");
         String treeURLString = (String) tree.get("url");
         printTree(treeURLString);
-        serializer.serialize(System.out, graph, "application/rdf+xml");
+        return graph;
     }
 
     private void printTree(String treeURLString) throws IOException, ParseException {
@@ -119,18 +124,18 @@ public class GetRepoGraph {
                     InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"));
                     String substring = path.substring(0, path.lastIndexOf("."));
                     if (rdfType == "text/turtle") {
-                    parser.parse(graph, contentInputStream, rdfType, new IRI("http://example.org/" + substring));
+                        parser.parse(graph, contentInputStream, rdfType, new IRI("http://example.org/" + substring));
                     }
                 } catch (IllegalArgumentException ex) {
-                    System.out.println("Path: " + path);
+                    /*System.out.println("Path: " + path);
                     System.out.println("Could not Decode: Illegal Argument");
-                    System.out.println("Encoded Content: " + contentBase64);
+                    System.out.println("Encoded Content: " + contentBase64);*/
                 }
             }
         }
-        if (rdfType == null) {
-            System.out.println(path + " is not a supported RFD file");
-        }
+        /*if (rdfType == null) {
+        System.out.println(path + " is not a supported RFD file");
+        }*/
     }
 
     private InputStream getAuthenticatedStream(URL url) throws IOException {
@@ -152,5 +157,17 @@ public class GetRepoGraph {
             return "text/turtle";
         }
         return null;
+    }
+
+    /**
+     *
+     * @param byteArrayOutputStream
+     * @return a string with utf-8
+     * @throws UnsupportedEncodingException
+     */
+    public static String byteToString(ByteArrayOutputStream byteArrayOutputStream) throws UnsupportedEncodingException {
+        byte[] bytes = byteArrayOutputStream.toByteArray();
+        String str = new String(bytes, "utf-8");
+        return str;
     }
 }
