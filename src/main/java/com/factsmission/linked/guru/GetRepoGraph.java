@@ -28,7 +28,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -79,8 +78,8 @@ public class GetRepoGraph {
         URL masterURI = new URL(masterURIString);
         InputStream masterJsonStream = getAuthenticatedStream(masterURI);
         Reader masterJsonReader = new InputStreamReader(masterJsonStream, "utf-8");
-        JSONParser parser = new JSONParser();
-        Object obj = parser.parse(masterJsonReader);
+        JSONParser jparser = new JSONParser();
+        Object obj = jparser.parse(masterJsonReader);
         JSONObject master = (JSONObject) obj;
         JSONObject commitA = (JSONObject) master.get("commit");
         JSONObject commitB = (JSONObject) commitA.get("commit");
@@ -112,20 +111,22 @@ public class GetRepoGraph {
     private void processFile(String path, URL stuffURL) throws IOException, ParseException {
         String rdfType = getRdfFormat(path);
         if (rdfType != null) {
-            InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
-            Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
-            JSONParser jsonParser = new JSONParser();
-            Object obj = jsonParser.parse(stuffJsonReader);
-            JSONObject jsonObject = (JSONObject) obj;
-            String contentBase64 = (String) jsonObject.get("content");
-            if (contentBase64 != null) {
-                try {
-                    String content = new String(Base64.getMimeDecoder().decode(contentBase64));
-                    InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"));
-                    IRI baseIRI = constructFileBaseIRI(path);
-                    parser.parse(graph, contentInputStream, rdfType, baseIRI);
-                } catch (IllegalArgumentException ex) {
-                    throw new RuntimeException("Something bad happened", ex);
+            if (!isItSpecial(path)) {
+                InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
+                Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
+                JSONParser jsonParser = new JSONParser();
+                Object obj = jsonParser.parse(stuffJsonReader);
+                JSONObject jsonObject = (JSONObject) obj;
+                String contentBase64 = (String) jsonObject.get("content");
+                if (contentBase64 != null) {
+                    try {
+                        String content = new String(Base64.getMimeDecoder().decode(contentBase64));
+                        InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"));
+                        IRI baseIRI = constructFileBaseIRI(path);
+                        parser.parse(graph, contentInputStream, rdfType, baseIRI);
+                    } catch (IllegalArgumentException ex) {
+                        throw new RuntimeException("Something bad happened", ex);
+                    }
                 }
             }
         }
@@ -182,5 +183,9 @@ public class GetRepoGraph {
         }
         IRI baseIRI = new IRI("http:/" + repo + username + ".linked.guru/"); //only one dash after http because repo comes with one.
         return baseIRI;
+    }
+
+    private Boolean isItSpecial(String path) {
+        return path.startsWith(".") || path.contains("/.");
     }
 }
