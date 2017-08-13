@@ -7,7 +7,7 @@
         <version>1</version>
         <relativePath />
     </parent>
-    <groupId>org.factsmission</groupId>
+    <groupId>com.factsmission</groupId>
     <artifactId>linked.guru</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
@@ -21,6 +21,11 @@
         <tag>HEAD</tag>
     </scm>
     <dependencies>
+        <dependency>
+            <groupId>solutions.linked</groupId>
+            <artifactId>tlds</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>javax.json</artifactId>
@@ -54,12 +59,6 @@
             <artifactId>rdf.core</artifactId>
             <version>1.0.0</version>
             <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.5.8</version>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.clerezza</groupId>
