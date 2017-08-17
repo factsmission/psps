@@ -101,7 +101,7 @@ public class UpdatingRootResource extends RootResource {
             } catch (ParseException ex) {
                 throw new RuntimeException(ex);
             }
-            return super.getGraphFor(resource);
+            return super.getGraphForTargetIri(resource);
         }
         return result;
     }
