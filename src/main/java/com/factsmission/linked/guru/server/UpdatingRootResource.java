@@ -23,6 +23,7 @@
  */
 package com.factsmission.linked.guru.server;
 
+import com.factsmission.linked.guru.Ontology;
 import com.factsmission.linked.guru.UploadRepoGraph;
 import com.factsmission.linked.guru.UploadRepoGraphArgs;
 import java.io.IOException;
@@ -33,6 +34,7 @@ import org.apache.clerezza.commons.rdf.Graph;
 import org.apache.clerezza.commons.rdf.IRI;
 import org.apache.clerezza.rdf.utils.GraphNode;
 import org.json.simple.parser.ParseException;
+import solutions.linked.slds.ConfigUtils;
 import solutions.linked.slds.RootResource;
 
 /**
@@ -42,8 +44,13 @@ import solutions.linked.slds.RootResource;
 @Path("")
 public class UpdatingRootResource extends RootResource {
     
+    private final GraphNode config;
+    private final ConfigUtils configUtils;
+    
     public UpdatingRootResource(GraphNode config) {
         super(config);
+        this.config = config;
+        this.configUtils = new ConfigUtils(config);
     }
 
     @Override
@@ -54,27 +61,27 @@ public class UpdatingRootResource extends RootResource {
                 new UploadRepoGraph(new UploadRepoGraphArgs() {
                     @Override
                     public String token() {
-                        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                        return config.getLiterals(Ontology.token).next().getLexicalForm();
                     }
                     
                     @Override
                     public String repository() {
-                        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                        return config.getLiterals(Ontology.repository).next().getLexicalForm();
                     }
                     
                     @Override
                     public String endpoint() {
-                        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                        return configUtils.getSparqlEndpointUri().getUnicodeString();
                     }
                     
                     @Override
                     public String userName() {
-                        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                        return configUtils.getUserName();
                     }
                     
                     @Override
                     public String password() {
-                        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                        return configUtils.getPassword();
                     }
                 }).getAndUpload();
             } catch (ParseException ex) {
