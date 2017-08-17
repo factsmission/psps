@@ -27,8 +27,6 @@ import com.factsmission.linked.guru.Ontology;
 import com.factsmission.linked.guru.UploadRepoGraph;
 import com.factsmission.linked.guru.UploadRepoGraphArgs;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.ws.rs.Path;
 import org.apache.clerezza.commons.rdf.Graph;
 import org.apache.clerezza.commons.rdf.IRI;
@@ -54,7 +52,7 @@ public class UpdatingRootResource extends RootResource {
     }
 
     @Override
-    protected Graph getGraphFor(final IRI resource) throws IOException {
+    protected Graph getGrapForTargetIri(final IRI resource) throws IOException {
         final Graph result = super.getGraphFor(resource);
         if (result.isEmpty()) {
             try {
