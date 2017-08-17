@@ -86,7 +86,7 @@ public class UpdatingRootResource extends RootResource {
                         String resourceString = resource.getUnicodeString();
                         String dottedRepo = resourceString.substring(resourceString.indexOf("/")+2, resourceString.indexOf(".linked.guru"));
                         String repo, user;
-                        String[] sections = dottedRepo.split(".");
+                        String[] sections = dottedRepo.split("\\.");
                         
                         if (sections.length == 1) {
                             repo = "linked";
