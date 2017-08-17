@@ -85,11 +85,11 @@ public class GetRepoGraph {
         JSONObject commitB = (JSONObject) commitA.get("commit");
         JSONObject tree = (JSONObject) commitB.get("tree");
         String treeURLString = (String) tree.get("url");
-        printTree(treeURLString);
+        processTree(treeURLString);
         return graph;
     }
 
-    private void printTree(String treeURLString) throws IOException, ParseException {
+    private void processTree(String treeURLString) throws IOException, ParseException {
         String treeURLRecursiveString = treeURLString + "?recursive=1";
         URL treeURLRecursive = new URL(treeURLRecursiveString);
         InputStream treeJsonStream = getAuthenticatedStream(treeURLRecursive);
