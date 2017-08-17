@@ -54,7 +54,7 @@ public class UpdatingRootResource extends RootResource {
     }
 
     @Override
-    protected Graph getGraphFor(IRI resource) throws IOException {
+    protected Graph getGraphFor(final IRI resource) throws IOException {
         final Graph result = super.getGraphFor(resource);
         if (result.isEmpty()) {
             try {
@@ -66,7 +66,7 @@ public class UpdatingRootResource extends RootResource {
                     
                     @Override
                     public String repository() {
-                        return config.getLiterals(Ontology.repository).next().getLexicalForm();
+                        return getRepositoryForResource(resource);
                     }
                     
                     @Override
@@ -82,6 +82,22 @@ public class UpdatingRootResource extends RootResource {
                     @Override
                     public String password() {
                         return configUtils.getPassword();
+                    }
+
+                    private String getRepositoryForResource(IRI resource) {
+                        String resourceString = resource.getUnicodeString();
+                        String dottedRepo = resourceString.substring(resourceString.indexOf("/")+2, resourceString.indexOf(".linked.guru"));
+                        String repo, user;
+                        String[] sections = dottedRepo.split(".");
+                        
+                        if (sections.length == 1) {
+                            repo = "linked";
+                            user = sections[0];
+                        } else {
+                            repo = sections[0];
+                            user = sections[1];
+                        }
+                        return user+"/"+repo;
                     }
                 }).getAndUpload();
             } catch (ParseException ex) {
