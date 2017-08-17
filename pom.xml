@@ -129,7 +129,7 @@
                                         <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                                         <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                             <manifestEntries>
-                                                <Main-Class>com.factsmission.linked.guru.GetRepoGraph</Main-Class>
+                                                <Main-Class>com.factsmission.linked.guru.server.Server</Main-Class>
                                             </manifestEntries>
                                         </transformer>
                                     </transformers>
