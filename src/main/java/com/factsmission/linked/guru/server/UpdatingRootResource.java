@@ -52,8 +52,8 @@ public class UpdatingRootResource extends RootResource {
     }
 
     @Override
-    protected Graph getGrapForTargetIri(final IRI resource) throws IOException {
-        final Graph result = super.getGraphFor(resource);
+    protected Graph getGraphForTargetIri(final IRI resource) throws IOException {
+        final Graph result = super.getGraphForTargetIri(resource);
         if (result.isEmpty()) {
             try {
                 new UploadRepoGraph(new UploadRepoGraphArgs() {
