@@ -130,15 +130,12 @@ public class GetRepoGraph {
                 }
             }
         }
-        /*if (rdfType == null) {
-        System.out.println(path + " is not a supported RFD file");
-        }*/
     }
 
     IRI constructFileBaseIRI(String path) {
         String pathSubstring = path.substring(0, path.lastIndexOf("."));
         IRI repoBaseIRI = constructRepoBaseIRI(repository);
-        IRI baseIRI = new IRI(repoBaseIRI.getUnicodeString()+pathSubstring); //only one dash after http because repo comes with one.
+        IRI baseIRI = new IRI(repoBaseIRI.getUnicodeString() + pathSubstring); //only one dash after http because repo comes with one.
         return baseIRI;
     }
 
