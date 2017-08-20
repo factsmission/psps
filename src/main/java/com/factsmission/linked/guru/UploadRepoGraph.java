@@ -31,6 +31,7 @@ import java.net.URL;
 import java.util.Base64;
 import org.apache.clerezza.commons.rdf.Graph;
 import org.apache.clerezza.rdf.core.serializedform.Serializer;
+import org.apache.clerezza.rdf.core.serializedform.SupportedFormat;
 import org.json.simple.parser.ParseException;
 import org.wymiwyg.commons.util.arguments.ArgumentHandler;
 
@@ -60,11 +61,19 @@ public class UploadRepoGraph {
     }
     
     private void uploadGraph(Graph graph) throws IOException {
-        final String mediaType = "text/turtle";
-        HttpURLConnection httpURLConnection = getAuthenticatedStream(mediaType, new URL(arguments.endpoint()+"?context-uri="
-                +GetRepoGraph.constructRepoBaseIRI(arguments.repository()).getUnicodeString()));
+        final String mediaType = "application/sparql-update; charset=UTF-8";
+        final String graphUri = GetRepoGraph.constructRepoBaseIRI(arguments.repository()).getUnicodeString();
+        HttpURLConnection httpURLConnection = getAuthenticatedStream(mediaType, new URL(arguments.endpoint()));
         OutputStream out = httpURLConnection.getOutputStream();
-        Serializer.getInstance().serialize(out, graph, mediaType);
+        //DROP SILENT GRAPH <graph_uri>;
+        //INSERT DATA { GRAPH <graph_uri> { .. RDF payload .. } }
+        out.write("DROP SILENT GRAPH <".getBytes("utf-8"));
+        out.write(graphUri.getBytes("utf-8"));
+        out.write(">; INSERT DATA { GRAPH <".getBytes("utf-8"));
+        out.write(graphUri.getBytes("utf-8"));
+        out.write("> { ".getBytes("utf-8"));
+        Serializer.getInstance().serialize(out, graph, SupportedFormat.N_TRIPLE);
+        out.write(" } }".getBytes("utf-8"));
         out.flush();
         out.close();
         InputStream in = httpURLConnection.getInputStream();
