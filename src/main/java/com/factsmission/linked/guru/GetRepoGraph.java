@@ -36,6 +36,8 @@ import java.util.Base64;
 import java.util.Iterator;
 import org.apache.clerezza.commons.rdf.Graph;
 import org.apache.clerezza.commons.rdf.IRI;
+import org.apache.clerezza.commons.rdf.Triple;
+import org.apache.clerezza.commons.rdf.impl.utils.TripleImpl;
 import org.apache.clerezza.commons.rdf.impl.utils.simple.SimpleGraph;
 import org.apache.clerezza.rdf.core.serializedform.Parser;
 import org.apache.clerezza.rdf.core.serializedform.Serializer;
@@ -48,12 +50,14 @@ public class GetRepoGraph {
 
     private final String repository;
     private final String token;
+    private String commitURL;
     private final Parser parser = Parser.getInstance();
     private final Graph graph = new SimpleGraph();
 
     GetRepoGraph(String repository, String token) {
         this.repository = repository;
         this.token = token;
+        this.commitURL = "";
     }
 
     public static void main(String[] args) throws Exception {
@@ -63,10 +67,9 @@ public class GetRepoGraph {
         }
         GetRepoGraph instance = new GetRepoGraph(args[0], args[1]);
         Graph g = instance.get();
-        //serializer.serialize(System.out, g, "application/rdf+xml");
-        ByteArrayOutputStream serializedStream = new ByteArrayOutputStream();
         Serializer serializer = Serializer.getInstance();
-        serializer.serialize(serializedStream, g, "application/rdf+xml");
+        ByteArrayOutputStream serializedStream = new ByteArrayOutputStream();
+        serializer.serialize(serializedStream, g, "text/turtle");
         String serializedString = byteToString(serializedStream);
         System.out.println("Voilà: " + serializedString);
 
@@ -75,6 +78,7 @@ public class GetRepoGraph {
     public Graph get() throws IOException, ParseException {
         System.out.println("Loading RDF data from " + repository);
         String masterURIString = "https://api.github.com/repos/" + repository + "/branches/master";
+        Serializer serializer = Serializer.getInstance();
         URL masterURI = new URL(masterURIString);
         InputStream masterJsonStream = getAuthenticatedStream(masterURI);
         Reader masterJsonReader = new InputStreamReader(masterJsonStream, "utf-8");
@@ -83,9 +87,11 @@ public class GetRepoGraph {
         JSONObject master = (JSONObject) obj;
         JSONObject commitA = (JSONObject) master.get("commit");
         JSONObject commitB = (JSONObject) commitA.get("commit");
+        commitURL = (String) commitA.get("html_url");
         JSONObject tree = (JSONObject) commitB.get("tree");
         String treeURLString = (String) tree.get("url");
         processTree(treeURLString);
+        graph.add(new TripleImpl(new IRI(constructRepoBaseIRI(repository).getUnicodeString()+".meta"), Ontology.latestCommit, new IRI(commitURL)));
         return graph;
     }
 
@@ -135,7 +141,7 @@ public class GetRepoGraph {
     IRI constructFileBaseIRI(String path) {
         String pathSubstring = path.substring(0, path.lastIndexOf("."));
         IRI repoBaseIRI = constructRepoBaseIRI(repository);
-        IRI baseIRI = new IRI(repoBaseIRI.getUnicodeString() + pathSubstring); //only one dash after http because repo comes with one.
+        IRI baseIRI = new IRI(repoBaseIRI.getUnicodeString() + pathSubstring);
         return baseIRI;
     }
 
@@ -178,7 +184,7 @@ public class GetRepoGraph {
         if (repo.equals("/linked.")) {
             repo = "/";
         }
-        IRI baseIRI = new IRI("http:/" + repo + username + ".linked.guru/"); //only one dash after http because repo comes with one.
+        IRI baseIRI = new IRI("http:/" + repo + username + ".linked.guru/"); //only one dash after http because repo (/repo.) comes with one.
         return baseIRI;
     }
 

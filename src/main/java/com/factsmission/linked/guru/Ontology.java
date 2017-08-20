@@ -32,4 +32,5 @@ import org.apache.clerezza.commons.rdf.IRI;
 public class Ontology {
     public static final IRI token = new IRI("http://linked.guru/ontology#token");
     public static final IRI repository = new IRI("http://linked.guru/ontology#repository");
+    public static final IRI latestCommit = new IRI("http://linked.guru/ontology#latestCommit");
 }
