@@ -88,18 +88,17 @@ public class UpdatingRootResource extends RootResource {
                         String repo, user;
                         String[] sections = dottedRepo.split("\\.");
                         
-                        switch (sections.length) {
-                            case 0: 
+                        if (sections.length == 1) {
+                            if (sections[0].isEmpty()) {
                                 repo = "linked.guru";
                                 user = "factsmission";
-                                break;
-                            case 1:
+                            } else {
                                 repo = "linked";
                                 user = sections[0];
-                                break;
-                            default:
-                                repo = sections[0];
-                                user = sections[1];
+                            }
+                        } else {
+                            repo = sections[0];
+                            user = sections[1];
                         }
                         return user+"/"+repo;
                     }
