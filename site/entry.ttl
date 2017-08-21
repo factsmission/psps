@@ -1,0 +1,4 @@
+@prefix s: <http://schema.org/> .
+
+<../> a s:WebPage;
+  s:name "linked.guru: Linked Data Sites for GitHub Repos".
