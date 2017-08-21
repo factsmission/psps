@@ -179,12 +179,15 @@ public class GetRepoGraph {
     }
 
     static IRI constructRepoBaseIRI(String repository) {
-        String username = repository.substring(0, repository.lastIndexOf("/"));
-        String repo = repository.substring(repository.lastIndexOf("/"), repository.length()) + ".";
-        if (repo.equals("/linked.")) {
-            repo = "/";
+        if (repository.equals("factsmission/linked.guru")) {
+            return new IRI("http://linked.guru/");
         }
-        IRI baseIRI = new IRI("http:/" + repo + username + ".linked.guru/"); //only one dash after http because repo (/repo.) comes with one.
+        String username = repository.substring(0, repository.lastIndexOf("/"));
+        String repo = repository.substring(repository.lastIndexOf("/")+1, repository.length()) + ".";
+        if (repo.equals("/linked.")) {
+            repo = "";
+        }
+        IRI baseIRI = new IRI("http://" + repo + username + ".linked.guru/");
         return baseIRI;
     }
 

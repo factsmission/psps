@@ -84,16 +84,22 @@ public class UpdatingRootResource extends RootResource {
 
                     private String getRepositoryForResource(IRI resource) {
                         String resourceString = resource.getUnicodeString();
-                        String dottedRepo = resourceString.substring(resourceString.indexOf("/")+2, resourceString.indexOf(".linked.guru"));
+                        String dottedRepo = resourceString.substring(resourceString.indexOf("/")+2, resourceString.indexOf("linked.guru"));
                         String repo, user;
                         String[] sections = dottedRepo.split("\\.");
                         
-                        if (sections.length == 1) {
-                            repo = "linked";
-                            user = sections[0];
-                        } else {
-                            repo = sections[0];
-                            user = sections[1];
+                        switch (sections.length) {
+                            case 0: 
+                                repo = "linked.guru";
+                                user = "factsmission";
+                                break;
+                            case 1:
+                                repo = "linked";
+                                user = sections[0];
+                                break;
+                            default:
+                                repo = sections[0];
+                                user = sections[1];
                         }
                         return user+"/"+repo;
                     }
