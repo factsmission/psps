@@ -155,13 +155,16 @@ public class GetRepoGraph {
     /**
      *
      * @param path
-     * @return the media type of the RDF-Fomat expected based on the
+     * @return the media type of the RDF-Format expected based on the
      * file-extension or null if no file-extension matching a supported type was
      * found
      */
     private String getRdfFormat(String path) {
         if (path.endsWith(".ttl")) {
             return "text/turtle";
+        }
+        if (path.endsWith(".rdf")) {
+            return "application/rdf+xml";
         }
         return null;
     }
