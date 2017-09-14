@@ -185,6 +185,9 @@ public class GetRepoGraph {
         if (path.endsWith(".rdf")) {
             return "application/rdf+xml";
         }
+        if (path.endsWith(".jsonld")) {
+            return "application/ld+json";
+        }
         return null;
     }
 
