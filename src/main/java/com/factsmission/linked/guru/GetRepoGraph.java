@@ -34,6 +34,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Base64;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.clerezza.commons.rdf.Graph;
 import org.apache.clerezza.commons.rdf.IRI;
 import org.apache.clerezza.commons.rdf.Triple;
@@ -52,12 +54,18 @@ public class GetRepoGraph {
     private final String token;
     private String commitURL;
     private final Parser parser = Parser.getInstance();
-    private final Graph graph = new SimpleGraph();
+    private final Graph dataGraph = new SimpleGraph();
+    private Graph matcherGraph = new SimpleGraph();
 
-    GetRepoGraph(String repository, String token) {
+    GetRepoGraph(String repository, String token) throws IOException {
         this.repository = repository;
         this.token = token;
         this.commitURL = "";
+        try {
+            processRepository();
+        } catch (ParseException ex) {
+            throw new IOException(ex);
+        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -66,16 +74,20 @@ public class GetRepoGraph {
             System.exit(1);
         }
         GetRepoGraph instance = new GetRepoGraph(args[0], args[1]);
-        Graph g = instance.get();
+        Graph g = instance.getDataGraph();
         Serializer serializer = Serializer.getInstance();
-        ByteArrayOutputStream serializedStream = new ByteArrayOutputStream();
-        serializer.serialize(serializedStream, g, "text/turtle");
-        String serializedString = byteToString(serializedStream);
-        System.out.println("Voilà: " + serializedString);
-
+        serializer.serialize(System.out, g, "text/turtle");
     }
 
-    public Graph get() throws IOException, ParseException {
+    public Graph getDataGraph() {
+        return dataGraph;
+    }
+    
+    public Graph getMatchersGraph() {
+        return matcherGraph;
+    }
+    
+    private void processRepository() throws IOException, ParseException {
         System.out.println("Loading RDF data from " + repository);
         String masterURIString = "https://api.github.com/repos/" + repository + "/branches/master";
         Serializer serializer = Serializer.getInstance();
@@ -91,8 +103,7 @@ public class GetRepoGraph {
         JSONObject tree = (JSONObject) commitB.get("tree");
         String treeURLString = (String) tree.get("url");
         processTree(treeURLString);
-        graph.add(new TripleImpl(new IRI(constructRepoBaseIRI(repository).getUnicodeString()+".meta"), Ontology.latestCommit, new IRI(commitURL)));
-        return graph;
+        dataGraph.add(new TripleImpl(new IRI(constructRepoBaseIRI(repository).getUnicodeString()+".meta"), Ontology.latestCommit, new IRI(commitURL)));
     }
 
     private void processTree(String treeURLString) throws IOException, ParseException {
@@ -118,22 +129,30 @@ public class GetRepoGraph {
         String rdfType = getRdfFormat(path);
         if (rdfType != null) {
             if (!isItSpecial(path)) {
-                InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
-                Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
-                JSONParser jsonParser = new JSONParser();
-                Object obj = jsonParser.parse(stuffJsonReader);
-                JSONObject jsonObject = (JSONObject) obj;
-                String contentBase64 = (String) jsonObject.get("content");
-                if (contentBase64 != null) {
-                    try {
-                        String content = new String(Base64.getMimeDecoder().decode(contentBase64));
-                        InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"));
-                        IRI baseIRI = constructFileBaseIRI(path);
-                        parser.parse(graph, contentInputStream, rdfType, baseIRI);
-                    } catch (IllegalArgumentException ex) {
-                        throw new RuntimeException("Something bad happened", ex);
-                    }
+                loadStuffToGraph(stuffURL, path, rdfType, dataGraph);
+            } else {
+                if (path.contains(".matchers.")) {
+                    loadStuffToGraph(stuffURL, path, rdfType, matcherGraph);
                 }
+            }
+        }
+    }
+
+    protected void loadStuffToGraph(URL stuffURL, String path, String rdfType, Graph graph) throws UnsupportedEncodingException, RuntimeException, ParseException, IOException {
+        InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
+        Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
+        JSONParser jsonParser = new JSONParser();
+        Object obj = jsonParser.parse(stuffJsonReader);
+        JSONObject jsonObject = (JSONObject) obj;
+        String contentBase64 = (String) jsonObject.get("content");
+        if (contentBase64 != null) {
+            try {
+                String content = new String(Base64.getMimeDecoder().decode(contentBase64));
+                InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"));
+                IRI baseIRI = constructFileBaseIRI(path);
+                parser.parse(graph, contentInputStream, rdfType, baseIRI);
+            } catch (IllegalArgumentException ex) {
+                throw new RuntimeException("Something bad happened", ex);
             }
         }
     }

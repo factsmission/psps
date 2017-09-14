@@ -24,4 +24,6 @@ data for the main graph.
 When a URI for any account doesn't result in any triple `linked.guru` will load 
 the data from the GitHub repository to the backing triple store using SPARQL. 
 
+## How do I start my own instance?
 
+[TBD]

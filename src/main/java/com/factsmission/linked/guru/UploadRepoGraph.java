@@ -55,7 +55,7 @@ public class UploadRepoGraph {
 
     public void getAndUpload() throws IOException, ParseException {
         GetRepoGraph getRepoGraph = new GetRepoGraph(arguments.repository(), arguments.token());
-        Graph g = getRepoGraph.get();
+        Graph g = getRepoGraph.getDataGraph();
         System.out.println("Got graph with size: "+g.size());
         uploadGraph(g);
     }
