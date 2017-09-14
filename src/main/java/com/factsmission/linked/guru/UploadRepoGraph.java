@@ -32,6 +32,7 @@ import java.util.Base64;
 import org.apache.clerezza.commons.rdf.Graph;
 import org.apache.clerezza.rdf.core.serializedform.Serializer;
 import org.apache.clerezza.rdf.core.serializedform.SupportedFormat;
+import org.apache.clerezza.rdf.core.serializedform.UnsupportedFormatException;
 import org.json.simple.parser.ParseException;
 import org.wymiwyg.commons.util.arguments.ArgumentHandler;
 
@@ -55,14 +56,22 @@ public class UploadRepoGraph {
 
     public void getAndUpload() throws IOException, ParseException {
         GetRepoGraph getRepoGraph = new GetRepoGraph(arguments.repository(), arguments.token());
-        Graph g = getRepoGraph.getDataGraph();
-        System.out.println("Got graph with size: "+g.size());
-        uploadGraph(g);
+        uploadDataGraph(getRepoGraph.getDataGraph());
+        uploadMatchersGraph(getRepoGraph.getMatchersGraph());
     }
     
-    private void uploadGraph(Graph graph) throws IOException {
-        final String mediaType = "application/sparql-update; charset=UTF-8";
+    private void uploadDataGraph(Graph graph) throws IOException {
         final String graphUri = GetRepoGraph.constructRepoBaseIRI(arguments.repository()).getUnicodeString();
+        uploadGraph(graphUri, graph);
+    }
+    
+    private void uploadMatchersGraph(Graph graph) throws IOException {
+        final String graphUri = GetRepoGraph.constructRepoBaseIRI(arguments.repository()).getUnicodeString()+"matchers";
+        uploadGraph(graphUri, graph);
+    }
+
+    protected void uploadGraph(final String graphUri, Graph graph) throws UnsupportedFormatException, IOException {
+        final String mediaType = "application/sparql-update; charset=UTF-8";
         HttpURLConnection httpURLConnection = getAuthenticatedStream(mediaType, new URL(arguments.endpoint()));
         OutputStream out = httpURLConnection.getOutputStream();
         //DROP SILENT GRAPH <graph_uri>;
