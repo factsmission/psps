@@ -21,7 +21,7 @@ data for the main graph.
 
 ## How does it work?
 
-When a URI for any account doesn't result in any triple `linked.guru` will loa
-d the data from the GitHub repository to the backing triple store using SPARQL. 
+When a URI for any account doesn't result in any triple `linked.guru` will load 
+the data from the GitHub repository to the backing triple store using SPARQL. 
 
 
