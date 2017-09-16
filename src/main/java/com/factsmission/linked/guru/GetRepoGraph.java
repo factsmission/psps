@@ -209,7 +209,7 @@ public class GetRepoGraph {
         }
         String username = repository.substring(0, repository.lastIndexOf("/"));
         String repo = repository.substring(repository.lastIndexOf("/")+1, repository.length()) + ".";
-        if (repo.equals("/linked.")) {
+        if (repo.equals("linked.")) {
             repo = "";
         }
         IRI baseIRI = new IRI("http://" + repo + username + ".linked.guru/");
