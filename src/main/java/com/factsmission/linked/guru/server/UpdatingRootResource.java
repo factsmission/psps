@@ -111,5 +111,12 @@ public class UpdatingRootResource extends RootResource {
         return result;
     }
     
+    @Override
+    protected String getQuery(IRI resource) {
+        return "DESCRIBE <"+resource.getUnicodeString()+"> {\n" +
+                "   hint:Query hint:describeMode \"SCBD\"\n" +
+                "}";
+    }
+    
     
 }
