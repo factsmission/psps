@@ -41,14 +41,35 @@ import solutions.linked.slds.RootResource;
  */
 @Path("")
 public class UpdatingRootResource extends RootResource {
-    
+
     private final GraphNode config;
     private final ConfigUtils configUtils;
-    
+
     public UpdatingRootResource(GraphNode config) {
         super(config);
         this.config = config;
         this.configUtils = new ConfigUtils(config);
+    }
+
+    private String getRepositoryForResource(IRI resource) {
+        String resourceString = resource.getUnicodeString();
+        String dottedRepo = resourceString.substring(resourceString.indexOf("/") + 2, resourceString.indexOf("linked.guru"));
+        String repo, user;
+        String[] sections = dottedRepo.split("\\.");
+
+        if (sections.length == 1) {
+            if (sections[0].isEmpty()) {
+                repo = "linked.guru";
+                user = "factsmission";
+            } else {
+                repo = "linked";
+                user = sections[0];
+            }
+        } else {
+            repo = sections[0];
+            user = sections[1];
+        }
+        return user + "/" + repo;
     }
 
     @Override
@@ -61,47 +82,28 @@ public class UpdatingRootResource extends RootResource {
                     public String token() {
                         return config.getLiterals(Ontology.token).next().getLexicalForm();
                     }
-                    
+
                     @Override
                     public String repository() {
                         return getRepositoryForResource(resource);
                     }
-                    
+
                     @Override
                     public String endpoint() {
+                        config.getObjectNodes(Ontology.updateEndpoint)
                         return configUtils.getSparqlEndpointUri().getUnicodeString();
                     }
-                    
+
                     @Override
                     public String userName() {
                         return configUtils.getUserName();
                     }
-                    
+
                     @Override
                     public String password() {
                         return configUtils.getPassword();
                     }
 
-                    private String getRepositoryForResource(IRI resource) {
-                        String resourceString = resource.getUnicodeString();
-                        String dottedRepo = resourceString.substring(resourceString.indexOf("/")+2, resourceString.indexOf("linked.guru"));
-                        String repo, user;
-                        String[] sections = dottedRepo.split("\\.");
-                        
-                        if (sections.length == 1) {
-                            if (sections[0].isEmpty()) {
-                                repo = "linked.guru";
-                                user = "factsmission";
-                            } else {
-                                repo = "linked";
-                                user = sections[0];
-                            }
-                        } else {
-                            repo = sections[0];
-                            user = sections[1];
-                        }
-                        return user+"/"+repo;
-                    }
                 }).getAndUpload();
             } catch (ParseException ex) {
                 throw new RuntimeException(ex);
@@ -110,13 +112,12 @@ public class UpdatingRootResource extends RootResource {
         }
         return result;
     }
-    
-    @Override
+
+    /*@Override
     protected String getQuery(IRI resource) {
-        return "DESCRIBE <"+resource.getUnicodeString()+"> {\n" +
-                "   hint:Query hint:describeMode \"SCBD\"\n" +
-                "}";
-    }
-    
-    
+        return "DESCRIBE <" + resource.getUnicodeString() + "> {\n"
+                + "   hint:Query hint:describeMode \"SCBD\"\n"
+                + "}";
+    }*/
+
 }
