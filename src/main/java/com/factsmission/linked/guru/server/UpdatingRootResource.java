@@ -26,10 +26,15 @@ package com.factsmission.linked.guru.server;
 import com.factsmission.linked.guru.Ontology;
 import com.factsmission.linked.guru.UploadRepoGraph;
 import com.factsmission.linked.guru.UploadRepoGraphArgs;
+
 import java.io.IOException;
+import java.util.Iterator;
+
 import javax.ws.rs.Path;
 import org.apache.clerezza.commons.rdf.Graph;
 import org.apache.clerezza.commons.rdf.IRI;
+import org.apache.clerezza.commons.rdf.Literal;
+import org.apache.clerezza.commons.rdf.RDFTerm;
 import org.apache.clerezza.rdf.utils.GraphNode;
 import org.json.simple.parser.ParseException;
 import solutions.linked.slds.ConfigUtils;
@@ -90,8 +95,13 @@ public class UpdatingRootResource extends RootResource {
 
                     @Override
                     public String endpoint() {
-                        config.getObjectNodes(Ontology.updateEndpoint)
-                        return configUtils.getSparqlEndpointUri().getUnicodeString();
+                        GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
+                        Iterator<RDFTerm> updateEndpoints = sparqlEndpoint.getObjects(Ontology.updateEndpoint);
+                        if (updateEndpoints.hasNext()) {
+                            return ((IRI)updateEndpoints.next()).getUnicodeString();
+                        } else {
+                            return ((IRI)sparqlEndpoint.getNode()).getUnicodeString();
+                        }
                     }
 
                     @Override
