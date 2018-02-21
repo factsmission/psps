@@ -54,6 +54,7 @@ public class Server extends TemplatingServer {
     protected Set<Object> getJaxRsComponents() {
         Set<Object> result =  super.getJaxRsComponents();
         result.add(new FavIcon());
+        result.add(new WebHook(config));
         return result;
     }
     
