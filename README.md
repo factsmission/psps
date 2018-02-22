@@ -8,3 +8,20 @@ Create a linked data site by simply pushing some RDF files to GitHub.
 - Start an instance of  PSPS
 - Add a webhook in Github notifying <yourInstance>/webhook/owner/repo
 - Add RDF data to your repository
+
+## Building
+
+    docker-compose build
+
+## Starting
+
+On Unix 
+
+    GITHUB_TOKEN="YOUR TOKEN HERE"; docker-compose up
+
+On windows
+
+     $env:GITHUB_TOKEN = "YOUR TOKEN HERE"
+     docker-compose up
+
+

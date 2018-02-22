@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.factsmission.linked.guru.server;
+package com.factsmission.psps.server;
 
 import java.io.InputStream;
 import javax.ws.rs.GET;

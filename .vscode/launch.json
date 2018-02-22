@@ -8,7 +8,7 @@
             "cwd": "${workspaceFolder}",
             "console": "internalConsole",
             "stopOnEntry": false,
-            "mainClass": "com.factsmission.linked.guru.server.Server",
+            "mainClass": "com.factsmission.psps.server.Server",
             "projectName": "linked.guru",
             "args": "config.ttl"
         },

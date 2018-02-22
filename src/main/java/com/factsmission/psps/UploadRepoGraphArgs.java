@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.factsmission.linked.guru;
+package com.factsmission.psps;
 
 import java.util.Date;
 import org.wymiwyg.commons.util.arguments.CommandLine;

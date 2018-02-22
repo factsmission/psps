@@ -8,16 +8,14 @@
         <relativePath />
     </parent>
     <groupId>com.factsmission</groupId>
-    <artifactId>linked.guru</artifactId>
+    <artifactId>psps</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>linked.guru</name>
-    <description>linked.guru exposes Linked Data sites from data in a GitHub repository.</description>
-    <url>http://linked.guru/</url>
+    <name>PSPS</name>
     <scm>
-        <url>https://github.com/factsmission/linked.guru</url>
-        <connection>scm:git:git://github.com/factsmission/linked.guru</connection>
-        <developerConnection>scm:git:git@github.com:factsmission/linked.guru.git</developerConnection>
+        <url>https://github.com/factsmission/psps</url>
+        <connection>scm:git:git://github.com/factsmission/psps</connection>
+        <developerConnection>scm:git:git@github.com:factsmission/psps.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
     <dependencies>
@@ -136,7 +134,7 @@
                                         <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                                         <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                             <manifestEntries>
-                                                <Main-Class>com.factsmission.linked.guru.server.Server</Main-Class>
+                                                <Main-Class>com.factsmission.psps.server.Server</Main-Class>
                                             </manifestEntries>
                                         </transformer>
                                     </transformers>

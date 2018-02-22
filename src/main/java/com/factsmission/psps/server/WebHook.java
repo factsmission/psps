@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.factsmission.linked.guru.server;
+package com.factsmission.psps.server;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -30,9 +30,9 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 
-import com.factsmission.linked.guru.Ontology;
-import com.factsmission.linked.guru.UploadRepoGraph;
-import com.factsmission.linked.guru.UploadRepoGraphArgs;
+import com.factsmission.psps.Ontology;
+import com.factsmission.psps.UploadRepoGraph;
+import com.factsmission.psps.UploadRepoGraphArgs;
 
 import org.apache.clerezza.commons.rdf.IRI;
 import org.apache.clerezza.commons.rdf.RDFTerm;

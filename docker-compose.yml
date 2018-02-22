@@ -1,0 +1,16 @@
+version: '3'
+services:
+  psps:
+    build: .
+    ports:
+     - "5000:5000"
+    environment:
+      GITHUB_TOKEN: "${GITHUB_TOKEN}"
+    depends_on:
+      - "fuseki"
+  fuseki:
+    image: "stain/jena-fuseki"
+    ports:
+      - "3030:3030"
+    environment:
+      ADMIN_PASSWORD: "pw123"
