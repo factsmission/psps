@@ -61,12 +61,12 @@ public class UploadRepoGraph {
     }
     
     private void uploadDataGraph(Graph graph) throws IOException {
-        final String graphUri = GetRepoGraph.constructRepoBaseIRI(arguments.repository()).getUnicodeString();
-        uploadGraph(graphUri, graph);
+       final String graphUri = "https://github.com/"+arguments.repository();
+       uploadGraph(graphUri, graph);
     }
     
     private void uploadMatchersGraph(Graph graph) throws IOException {
-        final String graphUri = GetRepoGraph.constructRepoBaseIRI(arguments.repository()).getUnicodeString()+"matchers";
+        final String graphUri = "https://github.com/"+arguments.repository()+"/matchers";
         uploadGraph(graphUri, graph);
     }
 

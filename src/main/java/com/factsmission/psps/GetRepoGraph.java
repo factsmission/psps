@@ -23,6 +23,7 @@
  */
 package com.factsmission.psps;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,12 +34,13 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.apache.clerezza.commons.rdf.Graph;
 import org.apache.clerezza.commons.rdf.IRI;
-import org.apache.clerezza.commons.rdf.Triple;
 import org.apache.clerezza.commons.rdf.impl.utils.TripleImpl;
 import org.apache.clerezza.commons.rdf.impl.utils.simple.SimpleGraph;
 import org.apache.clerezza.rdf.core.serializedform.Parser;
@@ -53,6 +55,7 @@ public class GetRepoGraph {
     private final String repository;
     private final String token;
     private String commitURL;
+    private IRI baseIRI;
     private final Parser parser = Parser.getInstance();
     private final Graph dataGraph = new SimpleGraph();
     private Graph matcherGraph = new SimpleGraph();
@@ -90,7 +93,6 @@ public class GetRepoGraph {
     private void processRepository() throws IOException, ParseException {
         System.out.println("Loading RDF data from " + repository);
         String masterURIString = "https://api.github.com/repos/" + repository + "/branches/master";
-        Serializer serializer = Serializer.getInstance();
         URL masterURI = new URL(masterURIString);
         InputStream masterJsonStream = getAuthenticatedStream(masterURI);
         Reader masterJsonReader = new InputStreamReader(masterJsonStream, "utf-8");
@@ -103,7 +105,7 @@ public class GetRepoGraph {
         JSONObject tree = (JSONObject) commitB.get("tree");
         String treeURLString = (String) tree.get("url");
         processTree(treeURLString);
-        dataGraph.add(new TripleImpl(new IRI(constructRepoBaseIRI(repository).getUnicodeString()+".meta"), Ontology.latestCommit, new IRI(commitURL)));
+        dataGraph.add(new TripleImpl(new IRI(getDefaultBaseIRI().getUnicodeString()+".meta"), Ontology.latestCommit, new IRI(commitURL)));
     }
 
     private void processTree(String treeURLString) throws IOException, ParseException {
@@ -115,17 +117,42 @@ public class GetRepoGraph {
         Object obj = parser.parse(treeJsonReader);
         JSONObject jsonObject = (JSONObject) obj;
         JSONArray tree = (JSONArray) jsonObject.get("tree");
+        Map<String, URL> path2Stuff = new HashMap<>();
         Iterator<JSONObject> iterator = tree.iterator();
         while (iterator.hasNext()) {
             JSONObject next = iterator.next();
             String path = (String) next.get("path");
             String url = (String) next.get("url");
             URL stuffURL = new URL(url);
-            processFile(path, stuffURL);
+            path2Stuff.put(path, stuffURL);
         }
+        baseIRI = getBaseIRI(path2Stuff.get("BASEURI"));
+        for (Entry<String, URL> entry : path2Stuff.entrySet()) {
+            processFile(entry.getKey(), entry.getValue());
+        };
     }
 
-    private void processFile(String path, URL stuffURL) throws IOException, ParseException {
+    private IRI getBaseIRI(URL baseUrlFile) throws IOException, ParseException {
+        if (baseUrlFile != null) {
+            try (InputStream baseUrlStream = getAuthenticatedStream(baseUrlFile);
+                    BufferedReader stuffJsonReader = new BufferedReader(new InputStreamReader(baseUrlStream, "utf-8"))) {
+                JSONParser jsonParser = new JSONParser();
+                Object obj = jsonParser.parse(stuffJsonReader);
+                JSONObject jsonObject = (JSONObject) obj;
+                String contentBase64 = (String) jsonObject.get("content");
+                String content = new String(Base64.getMimeDecoder().decode(contentBase64));
+                return new IRI(content.trim());
+            }
+        } else {
+            return getDefaultBaseIRI();
+        }
+	}
+
+	private IRI getDefaultBaseIRI() {
+		return new IRI("https://raw.githubusercontent.com/"+repository+"/master/");
+	}
+
+	private void processFile(String path, URL stuffURL) throws IOException, ParseException {
         String rdfType = getRdfFormat(path);
         if (rdfType != null) {
             if (!isItSpecial(path)) {
@@ -148,9 +175,10 @@ public class GetRepoGraph {
         if (contentBase64 != null) {
             try {
                 String content = new String(Base64.getMimeDecoder().decode(contentBase64));
-                InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"));
-                IRI baseIRI = constructFileBaseIRI(path);
-                parser.parse(graph, contentInputStream, rdfType, baseIRI);
+                try (InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"))) {
+                    IRI baseIRI = constructFileBaseIRI(path);
+                    parser.parse(graph, contentInputStream, rdfType, baseIRI);
+                }
             } catch (IllegalArgumentException ex) {
                 throw new RuntimeException("Something bad happened", ex);
             }
@@ -158,10 +186,8 @@ public class GetRepoGraph {
     }
 
     IRI constructFileBaseIRI(String path) {
-        String pathSubstring = path.substring(0, path.lastIndexOf("."));
-        IRI repoBaseIRI = constructRepoBaseIRI(repository);
-        IRI baseIRI = new IRI(repoBaseIRI.getUnicodeString() + pathSubstring);
-        return baseIRI;
+        //String pathSubstring = path.substring(0, path.lastIndexOf("."));
+        return new IRI(baseIRI.getUnicodeString() + path);
     }
 
     private InputStream getAuthenticatedStream(URL url) throws IOException {
@@ -201,19 +227,6 @@ public class GetRepoGraph {
         byte[] bytes = byteArrayOutputStream.toByteArray();
         String str = new String(bytes, "utf-8");
         return str;
-    }
-
-    static IRI constructRepoBaseIRI(String repository) {
-        if (repository.equals("factsmission/linked.guru")) {
-            return new IRI("http://linked.guru/");
-        }
-        String username = repository.substring(0, repository.lastIndexOf("/"));
-        String repo = repository.substring(repository.lastIndexOf("/")+1, repository.length()) + ".";
-        if (repo.equals("linked.")) {
-            repo = "";
-        }
-        IRI baseIRI = new IRI("http://" + repo + username + ".linked.guru/");
-        return baseIRI;
     }
 
     private Boolean isItSpecial(String path) {

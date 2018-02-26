@@ -23,7 +23,6 @@
  */
 package com.factsmission.psps;
 
-import java.util.Date;
 import org.wymiwyg.commons.util.arguments.CommandLine;
 
 /**

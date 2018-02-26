@@ -46,11 +46,6 @@ public class Server extends TemplatingServer {
     }
 
     @Override
-    protected Object getRootResource() {
-        return new UpdatingRootResource(config);
-    }
-
-    @Override
     protected Set<Object> getJaxRsComponents() {
         Set<Object> result =  super.getJaxRsComponents();
         result.add(new FavIcon());

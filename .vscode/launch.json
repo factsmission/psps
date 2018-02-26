@@ -9,8 +9,19 @@
             "console": "internalConsole",
             "stopOnEntry": false,
             "mainClass": "com.factsmission.psps.server.Server",
-            "projectName": "linked.guru",
+            "projectName": "psps",
             "args": "config.ttl"
+        },
+        {
+            "type": "java",
+            "name": "Debug (Launch)-GetRepoGraph",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "stopOnEntry": false,
+            "mainClass": "com.factsmission.psps.GetRepoGraph",
+            "projectName": "psps",
+            "args": "retog/linked a7e5dfe6707d1093a18b313c00a5734ea4140a8e"
         },
         {
             "type": "java",
