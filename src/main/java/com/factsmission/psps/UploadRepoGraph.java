@@ -29,7 +29,9 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Base64;
+import java.util.Map.Entry;
 import org.apache.clerezza.commons.rdf.Graph;
+import org.apache.clerezza.commons.rdf.IRI;
 import org.apache.clerezza.rdf.core.serializedform.Serializer;
 import org.apache.clerezza.rdf.core.serializedform.SupportedFormat;
 import org.apache.clerezza.rdf.core.serializedform.UnsupportedFormatException;
@@ -55,20 +57,13 @@ public class UploadRepoGraph {
     }
 
     public void getAndUpload() throws IOException, ParseException {
-        GetRepoGraph getRepoGraph = new GetRepoGraph(arguments.repository(), arguments.token());
-        uploadDataGraph(getRepoGraph.getDataGraph());
-        uploadMatchersGraph(getRepoGraph.getMatchersGraph());
+        GetRepoGraph getRepoGraph = new GetRepoGraph(arguments.repository(), arguments.token(), arguments.supressFileExtensions());
+        for (Entry<IRI, Graph> entry : getRepoGraph.getGraphs().entrySet()) {
+            uploadGraph(entry.getKey().getUnicodeString(), entry.getValue());
+        }
     }
     
-    private void uploadDataGraph(Graph graph) throws IOException {
-       final String graphUri = "https://github.com/"+arguments.repository();
-       uploadGraph(graphUri, graph);
-    }
-    
-    private void uploadMatchersGraph(Graph graph) throws IOException {
-        final String graphUri = "https://github.com/"+arguments.repository()+"/matchers";
-        uploadGraph(graphUri, graph);
-    }
+
 
     protected void uploadGraph(final String graphUri, Graph graph) throws UnsupportedFormatException, IOException {
         final String mediaType = "application/sparql-update; charset=UTF-8";

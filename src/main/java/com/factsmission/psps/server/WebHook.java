@@ -23,7 +23,6 @@
  */
 package com.factsmission.psps.server;
 
-import java.io.IOException;
 import java.util.Iterator;
 
 import javax.ws.rs.POST;
@@ -97,6 +96,11 @@ public class WebHook {
             public String password() {
                 return configUtils.getPassword();
             }
+
+			@Override
+			public boolean supressFileExtensions() {
+				return true;
+			}
 
         }).getAndUpload();
         return "OK";

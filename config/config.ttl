@@ -3,19 +3,10 @@
 
 <>
     slds:port 5000 ;
-    slds:sparqlEndpoint <http://fuseki:3030/psps/sparql> ;
-    slds:iriTranslators (
-        [
-            slds:backendPrefix "http://retog.linked.guru/";
-            slds:frontendPrefix "http://localhost:5000/"
-        ]
-        [
-            slds:backendPrefix "http://publication.plazi.org/";
-            slds:frontendPrefix "http://127.0.0.1:5000/"
-        ]) .
+    slds:sparqlEndpoint <http://fuseki:3030/psps/sparql> .
 
 <>
-        lg:token "a7e5dfe6707d1093a18b313c00a5734ea4140a8e".
+        lg:token "[PUT TOKEN HERE]".
 
 <http://fuseki:3030/psps/sparql>
     slds:userName "admin" ;

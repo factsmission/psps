@@ -45,6 +45,7 @@ import org.apache.clerezza.commons.rdf.impl.utils.TripleImpl;
 import org.apache.clerezza.commons.rdf.impl.utils.simple.SimpleGraph;
 import org.apache.clerezza.rdf.core.serializedform.Parser;
 import org.apache.clerezza.rdf.core.serializedform.Serializer;
+import org.apache.clerezza.rdf.ontologies.DCTERMS;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -57,13 +58,14 @@ public class GetRepoGraph {
     private String commitURL;
     private IRI baseIRI;
     private final Parser parser = Parser.getInstance();
-    private final Graph dataGraph = new SimpleGraph();
-    private Graph matcherGraph = new SimpleGraph();
+    private Map<IRI, Graph> graphs = new HashMap<IRI, Graph>();
+	private boolean supressFileExtension;
 
-    GetRepoGraph(String repository, String token) throws IOException {
+    GetRepoGraph(String repository, String token, boolean supressFileExtension) throws IOException {
         this.repository = repository;
         this.token = token;
         this.commitURL = "";
+        this.supressFileExtension = supressFileExtension;
         try {
             processRepository();
         } catch (ParseException ex) {
@@ -76,18 +78,18 @@ public class GetRepoGraph {
             System.err.println("Usage: GetRepoGraph <username/repository> <PersonalAccessToken>");
             System.exit(1);
         }
-        GetRepoGraph instance = new GetRepoGraph(args[0], args[1]);
-        Graph g = instance.getDataGraph();
-        Serializer serializer = Serializer.getInstance();
-        serializer.serialize(System.out, g, "text/turtle");
+        GetRepoGraph instance = new GetRepoGraph(args[0], args[1], true);
+        for (Entry<IRI, Graph> entry : instance.getGraphs().entrySet()) {
+            System.out.println("------------------------");
+            System.out.println("Graph: "+entry.getKey());
+            Graph g = entry.getValue();
+            Serializer serializer = Serializer.getInstance();
+            serializer.serialize(System.out, g, "text/turtle");
+        }
     }
 
-    public Graph getDataGraph() {
-        return dataGraph;
-    }
-    
-    public Graph getMatchersGraph() {
-        return matcherGraph;
+    public Map<IRI, Graph> getGraphs() {
+        return graphs;
     }
     
     private void processRepository() throws IOException, ParseException {
@@ -105,7 +107,12 @@ public class GetRepoGraph {
         JSONObject tree = (JSONObject) commitB.get("tree");
         String treeURLString = (String) tree.get("url");
         processTree(treeURLString);
-        dataGraph.add(new TripleImpl(new IRI(getDefaultBaseIRI().getUnicodeString()+".meta"), Ontology.latestCommit, new IRI(commitURL)));
+        Graph repoGraph = new SimpleGraph();
+        repoGraph.add(new TripleImpl(getRepoIRI(), Ontology.latestCommit, new IRI(commitURL)));
+        for (Entry<IRI, Graph> entry : graphs.entrySet()) {
+            repoGraph.add(new TripleImpl(entry.getKey(), DCTERMS.source, getRepoIRI()));
+        }
+        graphs.put(getRepoIRI(), repoGraph);
     }
 
     private void processTree(String treeURLString) throws IOException, ParseException {
@@ -150,22 +157,20 @@ public class GetRepoGraph {
 
 	private IRI getDefaultBaseIRI() {
 		return new IRI("https://raw.githubusercontent.com/"+repository+"/master/");
+    }
+    
+    private IRI getRepoIRI() {
+		return new IRI("https://github.com/"+repository);
 	}
 
 	private void processFile(String path, URL stuffURL) throws IOException, ParseException {
         String rdfType = getRdfFormat(path);
         if (rdfType != null) {
-            if (!isItSpecial(path)) {
-                loadStuffToGraph(stuffURL, path, rdfType, dataGraph);
-            } else {
-                if (path.contains(".matchers.")) {
-                    loadStuffToGraph(stuffURL, path, rdfType, matcherGraph);
-                }
-            }
+            loadStuffToGraph(stuffURL, path, rdfType);
         }
     }
 
-    protected void loadStuffToGraph(URL stuffURL, String path, String rdfType, Graph graph) throws UnsupportedEncodingException, RuntimeException, ParseException, IOException {
+    protected void loadStuffToGraph(URL stuffURL, String path, String rdfType) throws UnsupportedEncodingException, RuntimeException, ParseException, IOException {
         InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
         Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
         JSONParser jsonParser = new JSONParser();
@@ -177,7 +182,8 @@ public class GetRepoGraph {
                 String content = new String(Base64.getMimeDecoder().decode(contentBase64));
                 try (InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"))) {
                     IRI baseIRI = constructFileBaseIRI(path);
-                    parser.parse(graph, contentInputStream, rdfType, baseIRI);
+                    Graph graph = parser.parse(contentInputStream, rdfType, baseIRI);
+                    graphs.put(baseIRI, graph);
                 }
             } catch (IllegalArgumentException ex) {
                 throw new RuntimeException("Something bad happened", ex);
@@ -186,7 +192,9 @@ public class GetRepoGraph {
     }
 
     IRI constructFileBaseIRI(String path) {
-        //String pathSubstring = path.substring(0, path.lastIndexOf("."));
+        if (supressFileExtension) {
+            path = path.substring(0, path.lastIndexOf("."));
+        }
         return new IRI(baseIRI.getUnicodeString() + path);
     }
 
@@ -217,19 +225,5 @@ public class GetRepoGraph {
         return null;
     }
 
-    /**
-     *
-     * @param byteArrayOutputStream
-     * @return a string with utf-8
-     * @throws UnsupportedEncodingException
-     */
-    private static String byteToString(ByteArrayOutputStream byteArrayOutputStream) throws UnsupportedEncodingException {
-        byte[] bytes = byteArrayOutputStream.toByteArray();
-        String str = new String(bytes, "utf-8");
-        return str;
-    }
 
-    private Boolean isItSpecial(String path) {
-        return path.startsWith(".") || path.contains("/.");
-    }
 }

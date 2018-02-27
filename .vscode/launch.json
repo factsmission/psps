@@ -10,7 +10,7 @@
             "stopOnEntry": false,
             "mainClass": "com.factsmission.psps.server.Server",
             "projectName": "psps",
-            "args": "config.ttl"
+            "args": "../psps-config.ttl"
         },
         {
             "type": "java",

@@ -72,4 +72,13 @@ public interface UploadRepoGraphArgs {
         description = "The password for the SPARQL enpoint"
     )
     public String password();
+
+    @CommandLine (
+        longName ="supressExtensions",
+        shortName = "S",
+        required = false,
+        defaultValue = "true",
+        description = "Supress the file extensions of the RDF files in github"
+    )
+	public boolean supressFileExtensions();
 }
