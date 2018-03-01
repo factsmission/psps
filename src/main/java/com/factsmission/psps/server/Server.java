@@ -50,6 +50,7 @@ public class Server extends TemplatingServer {
         Set<Object> result =  super.getJaxRsComponents();
         result.add(new FavIcon());
         result.add(new WebHook(config));
+        result.add(new SparqlProxy(config));
         return result;
     }
     
