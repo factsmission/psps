@@ -10,7 +10,5 @@ services:
       - "fuseki"
   fuseki:
     image: "stain/jena-fuseki"
-    ports:
-      - "3030:3030"
     environment:
       ADMIN_PASSWORD: "pw123"
