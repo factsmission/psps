@@ -26,9 +26,12 @@ package com.factsmission.psps;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -59,7 +62,8 @@ public class GetRepoGraph {
     private IRI baseIRI;
     private final Parser parser = Parser.getInstance();
     private Map<IRI, Graph> graphs = new HashMap<IRI, Graph>();
-	private boolean supressFileExtension;
+    private boolean supressFileExtension;
+    private FileStorage fileStorage = new FileStorage();
 
     GetRepoGraph(String repository, String token, boolean supressFileExtension) throws IOException {
         this.repository = repository;
@@ -167,10 +171,30 @@ public class GetRepoGraph {
         String rdfType = getRdfFormat(path);
         if (rdfType != null) {
             loadStuffToGraph(stuffURL, path, rdfType);
+        } else {
+            loadStufToFileStore(stuffURL, path, rdfType);
         }
     }
 
-    protected void loadStuffToGraph(URL stuffURL, String path, String rdfType) throws UnsupportedEncodingException, RuntimeException, ParseException, IOException {
+    private void loadStufToFileStore(URL stuffURL, String path, String rdfType) throws IOException, ParseException {
+        InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
+        Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
+        JSONParser jsonParser = new JSONParser();
+        Object obj = jsonParser.parse(stuffJsonReader);
+        JSONObject jsonObject = (JSONObject) obj;
+        String contentBase64 = (String) jsonObject.get("content");
+        if (contentBase64 != null) {
+            try {
+                byte[] content = Base64.getMimeDecoder().decode(contentBase64);
+                IRI pathIRI = constructFileBaseIRI(path);
+                fileStorage.put(pathIRI, content);
+            } catch (IllegalArgumentException ex) {
+                throw new RuntimeException("Something bad happened", ex);
+            }
+        }
+	}
+
+	protected void loadStuffToGraph(URL stuffURL, String path, String rdfType) throws UnsupportedEncodingException, RuntimeException, ParseException, IOException {
         InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
         Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
         JSONParser jsonParser = new JSONParser();
@@ -182,6 +206,9 @@ public class GetRepoGraph {
                 String content = new String(Base64.getMimeDecoder().decode(contentBase64));
                 try (InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"))) {
                     IRI baseIRI = constructFileBaseIRI(path);
+                    if (supressFileExtension) {
+                        baseIRI = supressExtension(baseIRI);
+                    }
                     Graph graph = parser.parse(contentInputStream, rdfType, baseIRI);
                     graphs.put(baseIRI, graph);
                 }
@@ -191,10 +218,16 @@ public class GetRepoGraph {
         }
     }
 
-    IRI constructFileBaseIRI(String path) {
-        if (supressFileExtension) {
-            path = path.substring(0, path.lastIndexOf("."));
+    private IRI supressExtension(IRI iri) {
+        String string = iri.getUnicodeString();
+        int lastDotPos = string.lastIndexOf(".");
+        if (lastDotPos > -1) {
+            string = string.substring(0, lastDotPos);
         }
+        return new IRI(string);
+	}
+
+	IRI constructFileBaseIRI(String path) {
         return new IRI(baseIRI.getUnicodeString() + path);
     }
 

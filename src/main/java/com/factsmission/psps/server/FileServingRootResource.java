@@ -23,41 +23,30 @@
  */
 package com.factsmission.psps.server;
 
-import java.io.FileNotFoundException;
-import java.util.Set;
-import org.factsmission.tlds.TemplatingServer;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.UriInfo;
+import org.apache.clerezza.rdf.utils.GraphNode;
+import com.factsmission.psps.FileStorage;
+import java.io.IOException;
+import solutions.linked.slds.RootResource;
 
-/**
- *
- * @author user
- */
-public class Server extends TemplatingServer {
+@Path("")
+public class FileServingRootResource extends RootResource {
     
-    public Server(String[] args) throws FileNotFoundException {
-        super(args);
-    }
-    
-    public static void main(String[] args) throws Exception {
-        if (args.length < 1) {
-            System.err.println("Argument pointing to configuration required");
-            return;
-        }
-        new Server(args).run();
-    }
+    private FileStorage fileStorage = new FileStorage();
 
-    @Override
-    protected Set<Object> getJaxRsComponents() {
-        Set<Object> result =  super.getJaxRsComponents();
-        result.add(new FavIcon());
-        result.add(new WebHook(config));
-        result.add(new SparqlProxy(config));
-        return result;
+    public FileServingRootResource(GraphNode config) {
+        super(config);
+	}
+
+	@GET
+    @Path("{path : .*}")
+    public Object get(@Context HttpHeaders httpHeaders, 
+                        @Context UriInfo uriInfo) throws IOException {
+        //fileStorage.get(iri)
+        return super.getResourceDescription(httpHeaders, uriInfo);
     }
-    
-    @Override
-    protected Object getRootResource() {
-        return new FileServingRootResource(config);
-    }
-    
-    
 }
