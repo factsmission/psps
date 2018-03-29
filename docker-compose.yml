@@ -9,6 +9,6 @@ services:
     depends_on:
       - "fuseki"
   fuseki:
-    image: "stain/jena-fuseki"
+    image: "linkedsolutions/fuseki"
     environment:
       ADMIN_PASSWORD: "pw123"
