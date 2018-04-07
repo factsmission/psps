@@ -13,4 +13,5 @@ RUN cd /usr/src && \
     mvn install && \
     cd /usr/src/app && \
     mvn clean install -Pexecutable -DfinalName=psps
+RUN chmod +x /usr/src/app/docker-entrypoint.sh
 ENTRYPOINT  ["/usr/src/app/docker-entrypoint.sh"]
