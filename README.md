@@ -15,6 +15,8 @@ Create a linked data site by simply pushing some RDF files to GitHub.
 
 ## Starting
 
+You need to get a GitHub personal access token. You can generate one under [Setting / Developer settings / Personal Access tokens](https://github.com/settings/tokens)
+
 On Unix 
 
     GITHUB_TOKEN="YOUR TOKEN HERE"; docker-compose up
@@ -25,3 +27,7 @@ On windows
      docker-compose up
 
 
+## Run on [Rancher](https://rancher.com/)
+
+ * Add Stack for psps
+ * Configure using the file [docker-compompose-no-build.yml](docker-compompose-no-build.yml), set GITHUB_TOKEN to you GitHub Personal Access Token.
