@@ -25,19 +25,13 @@ package com.factsmission.psps;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-
 import org.apache.clerezza.commons.rdf.IRI;
 import org.apache.commons.io.IOUtils;
-
-import solutions.linked.slds.RootResource;
 
 public class FileStorage {
     
