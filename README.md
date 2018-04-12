@@ -1,6 +1,6 @@
 # Personal Structured Publishing Space
 
-Create a linked data site by simply pushing some RDF files to GitHub.
+Create a linked data site serving RDF data from files in a GitHub repository.
 
 ## How to use it?
 
