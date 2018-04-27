@@ -29,12 +29,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 
 import org.apache.clerezza.commons.rdf.IRI;
 import org.apache.commons.io.IOUtils;
 
 public class FileStorage {
     
+    public interface Entity {
+        public byte[] getBytes();
+        public String getMediaType();
+    }
+
     private File baseFileStorage = new File(new File(System.getProperty("user.dir")), "psps");
 
     public void put(IRI iri, byte[] bytes) throws IOException {
@@ -50,11 +56,27 @@ public class FileStorage {
         return new File(baseFileStorage, filePath);
 	}
 
-    public byte[] get(IRI iri) throws IOException {
+    public Entity get(IRI iri) throws IOException {
         File file = getFile(iri);
         if (file.exists() && !file.isDirectory()) {
-            try (InputStream in = new FileInputStream(file)) {
-                return IOUtils.toByteArray(in);
+            try (final InputStream in = new FileInputStream(file)) {
+                final byte[] bytes = IOUtils.toByteArray(in);
+                final String mediaType = Files.probeContentType(file.toPath());
+                return new Entity() {
+
+					@Override
+					public byte[] getBytes() {
+						return bytes;
+					}
+
+					@Override
+					public String getMediaType() {
+                        if (mediaType == null) {
+                            return "application/octet-stream";
+                        }
+						return mediaType;
+					}
+                };
             }
         } else {
             return null;

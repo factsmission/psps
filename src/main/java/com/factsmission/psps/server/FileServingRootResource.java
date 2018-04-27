@@ -27,26 +27,40 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.Response.ResponseBuilder;
+
+import org.apache.clerezza.commons.rdf.IRI;
 import org.apache.clerezza.rdf.utils.GraphNode;
 import com.factsmission.psps.FileStorage;
 import java.io.IOException;
+import java.net.URI;
+
 import solutions.linked.slds.RootResource;
 
 @Path("")
-public class FileServingRootResource extends RootResource {
+public class FileServingRootResource {
     
     private FileStorage fileStorage = new FileStorage();
+    private RootResource sldsRootResource;
 
     public FileServingRootResource(GraphNode config) {
-        super(config);
+        sldsRootResource = new RootResource(config);
 	}
 
 	@GET
     @Path("{path : .*}")
     public Object get(@Context HttpHeaders httpHeaders, 
                         @Context UriInfo uriInfo) throws IOException {
-        //fileStorage.get(iri)
-        return super.getResourceDescription(httpHeaders, uriInfo);
+        final URI requestUri = uriInfo.getRequestUri();
+        IRI iri = new IRI(requestUri.toString());
+        FileStorage.Entity blob = fileStorage.get(iri);
+        if (blob != null) {
+            return Response.ok(blob.getBytes()).header("Content-Type", blob.getMediaType()).build();
+        } else {
+            //as getGraphFor(IRI) is protected
+            return sldsRootResource.getResourceDescription(httpHeaders, uriInfo);
+        }
     }
 }
