@@ -23,8 +23,11 @@
  */
 package com.factsmission.psps.server;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -44,6 +47,7 @@ import com.factsmission.psps.UploadRepoGraphArgs;
 import org.apache.clerezza.commons.rdf.IRI;
 import org.apache.clerezza.commons.rdf.RDFTerm;
 import org.apache.clerezza.rdf.utils.GraphNode;
+import org.json.simple.parser.ParseException;
 
 import solutions.linked.slds.ConfigUtils;
 
@@ -56,6 +60,7 @@ public class WebHook {
 
     private final GraphNode config;
     private final ConfigUtils configUtils;
+    private final static ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     public WebHook(GraphNode config) {
         this.config = config;
@@ -69,48 +74,58 @@ public class WebHook {
                 : null;
 
         if ((secret == null) || GitHubWebhookUtility.verifySignature(body, signature, secret)) {
-            final JsonReader rdr = Json.createReader(new StringReader(body));
-            final JsonObject obj = rdr.readObject();
-            final String path = obj.getJsonObject("repository").getString("full_name");
-
-            new UploadRepoGraph(new UploadRepoGraphArgs() {
+            executorService.execute(new Runnable(){
+            
                 @Override
-                public String token() {
-                    return config.getLiterals(Ontology.token).next().getLexicalForm();
-                }
+                public void run() {                    
+                    final JsonReader rdr = Json.createReader(new StringReader(body));
+                    final JsonObject obj = rdr.readObject();
+                    final String path = obj.getJsonObject("repository").getString("full_name");
 
-                @Override
-                public String repository() {
-                    return path;
-                }
+                    try {
+						new UploadRepoGraph(new UploadRepoGraphArgs() {
+                        @Override
+                        public String token() {
+                            return config.getLiterals(Ontology.token).next().getLexicalForm();
+                        }
 
-                @Override
-                public String endpoint() {
-                    GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
-                    Iterator<RDFTerm> updateEndpoints = sparqlEndpoint.getObjects(Ontology.updateEndpoint);
-                    if (updateEndpoints.hasNext()) {
-                        return ((IRI) updateEndpoints.next()).getUnicodeString();
-                    } else {
-                        return ((IRI) sparqlEndpoint.getNode()).getUnicodeString();
-                    }
-                }
+                        @Override
+                        public String repository() {
+                            return path;
+                        }
 
-                @Override
-                public String userName() {
-                    return configUtils.getUserName();
-                }
+                        @Override
+                        public String endpoint() {
+                            GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
+                            Iterator<RDFTerm> updateEndpoints = sparqlEndpoint.getObjects(Ontology.updateEndpoint);
+                            if (updateEndpoints.hasNext()) {
+                                return ((IRI) updateEndpoints.next()).getUnicodeString();
+                            } else {
+                                return ((IRI) sparqlEndpoint.getNode()).getUnicodeString();
+                            }
+                        }
 
-                @Override
-                public String password() {
-                    return configUtils.getPassword();
-                }
+                        @Override
+                        public String userName() {
+                            return configUtils.getUserName();
+                        }
 
-                @Override
-                public boolean supressFileExtensions() {
-                    return true;
-                }
+                        @Override
+                        public String password() {
+                            return configUtils.getPassword();
+                        }
 
-            }).getAndUpload();
+                        @Override
+                        public boolean supressFileExtensions() {
+                            return true;
+                        }
+
+                    }).getAndUpload();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+                }
+            });
             return Response.noContent().build();
         } else {
             return Response.status(Status.UNAUTHORIZED).build();
