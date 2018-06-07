@@ -23,11 +23,19 @@
  */
 package com.factsmission.psps.server;
 
+import java.io.StringReader;
 import java.util.Iterator;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import com.factsmission.psps.Ontology;
 import com.factsmission.psps.UploadRepoGraph;
@@ -55,54 +63,58 @@ public class WebHook {
     }
 
     @POST
-    @Path("{path : .*}")
-    public String receive(@PathParam("path") String path, String body) throws Exception {
-        //could alternatively get repo from body/repository/full_name
-        /*JsonReader rdr = Json.createReader(new StringReader(body));
-        JsonObject obj = rdr.readObject();
-        for (java.util.Map.Entry<String, javax.json.JsonValue> e : obj.entrySet()) {
-            System.out.println(e.getKey() + " = " + e.getValue() + "\n");
-        }*/
+    public Response receive(@HeaderParam("x-hub-signature") String signature, String body) throws Exception {
+        final String secret = config.getLiterals(Ontology.webhookSecret).hasNext()
+                ? config.getLiterals(Ontology.webhookSecret).next().getLexicalForm()
+                : null;
 
+        if ((secret == null) || GitHubWebhookUtility.verifySignature(body, signature, secret)) {
+            final JsonReader rdr = Json.createReader(new StringReader(body));
+            final JsonObject obj = rdr.readObject();
+            final String path = obj.getJsonObject("repository").getString("full_name");
 
-        new UploadRepoGraph(new UploadRepoGraphArgs() {
-            @Override
-            public String token() {
-                return config.getLiterals(Ontology.token).next().getLexicalForm();
-            }
-
-            @Override
-            public String repository() {
-                return path;
-            }
-
-            @Override
-            public String endpoint() {
-                GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
-                Iterator<RDFTerm> updateEndpoints = sparqlEndpoint.getObjects(Ontology.updateEndpoint);
-                if (updateEndpoints.hasNext()) {
-                    return ((IRI)updateEndpoints.next()).getUnicodeString();
-                } else {
-                    return ((IRI)sparqlEndpoint.getNode()).getUnicodeString();
+            new UploadRepoGraph(new UploadRepoGraphArgs() {
+                @Override
+                public String token() {
+                    return config.getLiterals(Ontology.token).next().getLexicalForm();
                 }
-            }
 
-            @Override
-            public String userName() {
-                return configUtils.getUserName();
-            }
+                @Override
+                public String repository() {
+                    return path;
+                }
 
-            @Override
-            public String password() {
-                return configUtils.getPassword();
-            }
+                @Override
+                public String endpoint() {
+                    GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
+                    Iterator<RDFTerm> updateEndpoints = sparqlEndpoint.getObjects(Ontology.updateEndpoint);
+                    if (updateEndpoints.hasNext()) {
+                        return ((IRI) updateEndpoints.next()).getUnicodeString();
+                    } else {
+                        return ((IRI) sparqlEndpoint.getNode()).getUnicodeString();
+                    }
+                }
 
-			@Override
-			public boolean supressFileExtensions() {
-				return true;
-			}
+                @Override
+                public String userName() {
+                    return configUtils.getUserName();
+                }
 
-        }).getAndUpload();
-        return "OK";
+                @Override
+                public String password() {
+                    return configUtils.getPassword();
+                }
+
+                @Override
+                public boolean supressFileExtensions() {
+                    return true;
+                }
+
+            }).getAndUpload();
+            return Response.noContent().build();
+        } else {
+            return Response.status(Status.UNAUTHORIZED).build();
+        }
+
     }
 }
