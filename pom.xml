@@ -10,7 +10,7 @@
     <groupId>com.factsmission</groupId>
     <artifactId>psps</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <!-- <packaging>jar</packaging> -->
     <name>PSPS</name>
     <scm>
         <url>https://github.com/factsmission/psps</url>

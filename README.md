@@ -6,7 +6,7 @@ Create a linked data site serving RDF data from files in a GitHub repository.
 
 - Add a BASEURI file to the root of your repo with the base URI of your data
 - Start an instance of  PSPS
-- Add a webhook in Github notifying <yourInstance>/webhook/owner/repo
+- Add a webhook in Github notifying <yourInstance>/webhook with the set webhook secret (see below)
 - Add RDF data to your repository
 
 ## Building
@@ -19,11 +19,12 @@ You need to get a GitHub personal access token. You can generate one under [Sett
 
 On Unix 
 
-    GITHUB_TOKEN="YOUR TOKEN HERE"; docker-compose up
+    GITHUB_TOKEN="YOUR TOKEN HERE"; WEBHOOK_SECRET="THE WEBHOOK SECRET"; docker-compose up
 
 On windows
 
      $env:GITHUB_TOKEN = "YOUR TOKEN HERE"
+     $env:WEBHOOK_SECRET="THE WEBHOOK SECRET"
      docker-compose up
 
 

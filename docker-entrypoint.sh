@@ -4,6 +4,10 @@ if [ -n "$GITHUB_TOKEN" ] ; then
   sed -i "s/^\s*lg:token.*/lg:token \"$GITHUB_TOKEN\"./" "/config/config.ttl"
 fi
 
+if [ -n "$WEBHOOK_SECRET" ] ; then
+  sed -i "s/^\s*lg:webhookSecret.*/lg:webhookSecret \"$WEBHOOK_SECRET\"./" "/config/config.ttl"
+fi
+
 until $(curl --output /dev/null --silent --head --fail http://fuseki:3030/); do
     printf '.'
     sleep 5

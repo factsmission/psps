@@ -8,6 +8,9 @@
 <>
         lg:token "[PUT TOKEN HERE]".
 
+<>
+        lg:webhookSecret "".
+
 <http://fuseki:3030/psps/sparql>
     slds:userName "admin" ;
     slds:password "pw123";
