@@ -29,9 +29,14 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Base64;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 import org.apache.clerezza.commons.rdf.Graph;
 import org.apache.clerezza.commons.rdf.IRI;
+import org.apache.clerezza.commons.rdf.RDFTerm;
 import org.apache.clerezza.rdf.core.serializedform.Serializer;
 import org.apache.clerezza.rdf.core.serializedform.SupportedFormat;
 import org.apache.clerezza.rdf.core.serializedform.UnsupportedFormatException;
@@ -58,16 +63,51 @@ public class UploadRepoGraph {
 
     public void getAndUpload() throws IOException, ParseException {
         GetRepoGraph getRepoGraph = new GetRepoGraph(arguments.repository(), arguments.token(), arguments.supressFileExtensions());
+        IRI repoIri = new IRI("https://github.com/"+arguments.repository());
+		Set<IRI> graphsFromRepoBeforeUpload = getGraphsWithSource(repoIri);
         for (Entry<IRI, Graph> entry : getRepoGraph.getGraphs().entrySet()) {
             uploadGraph(entry.getKey().getUnicodeString(), entry.getValue());
         }
+        graphsFromRepoBeforeUpload.removeAll(getGraphsWithSource(repoIri));
+        dropGraphs(graphsFromRepoBeforeUpload);
     }
     
 
 
-    protected void uploadGraph(final String graphUri, Graph graph) throws UnsupportedFormatException, IOException {
+    private void dropGraphs(Set<IRI> graphsFromRepoBeforeUpload) throws IOException {
+        for (IRI graphUri : graphsFromRepoBeforeUpload) {
+            final String mediaType = "application/sparql-update; charset=UTF-8";
+            HttpURLConnection httpURLConnection = getAuthenticatedStream(mediaType, new URL(arguments.updateEndpoint()));
+            OutputStream out = httpURLConnection.getOutputStream();
+            out.write("DROP SILENT GRAPH <".getBytes("utf-8"));
+            out.write(graphUri.getUnicodeString().getBytes("utf-8"));
+            out.write(">".getBytes("utf-8"));
+            out.flush();
+            out.close();
+            InputStream in = httpURLConnection.getInputStream();
+            for (int i = in.read(); i != -1; i = in.read()) {
+                System.out.write(i);
+            }
+        }
+	}
+
+	private Set<IRI> getGraphsWithSource(IRI iri) throws IOException {
+        Set<IRI> result = new HashSet<>();
+        SparqlClient sparqlClient = new SparqlClient(arguments.queryEndpoint());
+        String query = "SELECT DISTINCT ?graph WHERE { GRAPH <"+iri.getUnicodeString()+"> {\n"+
+        "    ?graph <http://purl.org/dc/terms/source> <"+iri.getUnicodeString()+"> .\n"+
+        "    }\n"+
+        "  }";
+        List<Map<String,RDFTerm>> results = sparqlClient.queryResultSet(query);
+        for (Map<String,RDFTerm> row : results) {
+            result.add((IRI) row.get("graph"));
+        }
+		return result;
+	}
+
+	protected void uploadGraph(final String graphUri, Graph graph) throws UnsupportedFormatException, IOException {
         final String mediaType = "application/sparql-update; charset=UTF-8";
-        HttpURLConnection httpURLConnection = getAuthenticatedStream(mediaType, new URL(arguments.endpoint()));
+        HttpURLConnection httpURLConnection = getAuthenticatedStream(mediaType, new URL(arguments.updateEndpoint()));
         OutputStream out = httpURLConnection.getOutputStream();
         //DROP SILENT GRAPH <graph_uri>;
         //INSERT DATA { GRAPH <graph_uri> { .. RDF payload .. } }

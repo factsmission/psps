@@ -48,13 +48,20 @@ public interface UploadRepoGraphArgs {
     public String repository();
     
     @CommandLine (
-        longName ="endpoint",
+        longName ="queryEndpoint",
+        shortName = "Q",
+        required = false,
+        description = "The SPARQL endpoint against which to send queries"
+    )
+    public String queryEndpoint();
+
+    @CommandLine (
+        longName ="updateEndpoint",
         shortName = "E",
         required = false,
-        defaultValue = "http://cldi.synapta.io/blazegraph/namespace/cldi/sparql",
         description = "The SPARQL endpoint against which to send the update requests"
     )
-    public String endpoint();
+    public String updateEndpoint();
 
     @CommandLine (
         longName ="userName",
