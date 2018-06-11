@@ -95,7 +95,13 @@ public class WebHook {
                         }
 
                         @Override
-                        public String endpoint() {
+                        public String queryEndpoint() {
+                            GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
+                            return ((IRI) sparqlEndpoint.getNode()).getUnicodeString();
+                        }
+
+                        @Override
+                        public String updateEndpoint() {
                             GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
                             Iterator<RDFTerm> updateEndpoints = sparqlEndpoint.getObjects(Ontology.updateEndpoint);
                             if (updateEndpoints.hasNext()) {
