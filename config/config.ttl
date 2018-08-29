@@ -4,16 +4,16 @@
 
 <>
     slds:port 5000 ;
-    slds:sparqlEndpoint <http://fuseki:3030/psps/sparql> ;
-    tlds:renderers ( 
-    "https://rdf2h.github.io/renderers/0.0.1/fallback-renderers.ttl" 
-    "/renderers" ) .
+    slds:sparqlEndpoint <http://fuseki:3030/psps/sparql> .
 
-<>
-        lg:token "[PUT TOKEN HERE]".
+<>  
+    tlds:renderers ( "https://rdf2h.github.io/renderers/0.0.1/fallback-renderers.ttl" "/renderers" ) .
 
-<>
-        lg:webhookSecret "".
+<>  
+    lg:token "[PUT TOKEN HERE]".
+
+<>  
+    lg:webhookSecret "".
 
 <http://fuseki:3030/psps/sparql>
     slds:userName "admin" ;
