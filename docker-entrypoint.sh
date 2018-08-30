@@ -9,7 +9,8 @@ if [ -n "$WEBHOOK_SECRET" ] ; then
 fi
 
 if [ -n "$RENDERER_LIST" ] ; then
-  sed -i "s/^\s*tlds:renderers.*/tlds:renderers ($RENDERER_LIST)./" "/config/config.ttl"
+  ESCAPED=${RENDERER_LIST//\//\\\/}
+  sed -i "s/^\s*tlds:renderers.*/tlds:renderers ($ESCAPED)./" "/config/config.ttl"
 fi
 
 until $(curl --output /dev/null --silent --head --fail http://fuseki:3030/); do
