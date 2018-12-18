@@ -29,13 +29,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.apache.clerezza.commons.rdf.IRI;
 import org.apache.clerezza.rdf.utils.GraphNode;
 import com.factsmission.psps.FileStorage;
 import java.io.IOException;
 import java.net.URI;
+import solutions.linked.slds.ExtensibleRootResource;
 
 import solutions.linked.slds.RootResource;
 
@@ -46,7 +46,7 @@ public class FileServingRootResource {
     private RootResource sldsRootResource;
 
     public FileServingRootResource(GraphNode config) {
-        sldsRootResource = new RootResource(config);
+        sldsRootResource = new ExtensibleRootResource(config);
 	}
 
 	@GET
