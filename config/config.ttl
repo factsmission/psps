@@ -4,7 +4,7 @@
 
 <>
     slds:port 5000 ;
-    slds:sparqlEndpoint <http://fuseki:3030/psps/sparql> .
+    slds:sparqlEndpoint <http://fuseki:3030/psps/sparql> ;
     slds:resourceDescriptionProvider [
         slds:javaClass "solutions.linked.slds.providers.GraphAndContext";
         slds:sparqlEndpoint <http://fuseki:3030/psps/sparql> 
