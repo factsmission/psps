@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.clerezza.commons.rdf.IRI;
 import org.apache.commons.io.IOUtils;
@@ -41,7 +43,12 @@ public class FileStorage {
         public String getMediaType();
     }
 
-    private File baseFileStorage = new File(new File(System.getProperty("user.dir")), "psps");
+    private final File baseFileStorage = new File(new File(System.getProperty("user.dir")), "psps");
+    
+    public FileStorage() {
+        Logger.getLogger(FileStorage.class.getName()).log(
+                Level.INFO, "initializing filde storage with: {0}", baseFileStorage);
+    }
 
     public void put(IRI iri, byte[] bytes) throws IOException {
         File file = getFile(iri);
