@@ -1,13 +1,14 @@
 # Personal Structured Publishing Space
 
-Create a linked data site serving RDF data from files in a GitHub repository.
+Create a linked data site serving RDF data from files in a GitHub repository. 
 
 ## How to use it?
 
 - Add a BASEURI file to the root of your repo with the base URI of your data
 - Start an instance of  PSPS
-- Add a webhook in Github notifying <yourInstance>/webhook with the set webhook secret (see below)
+- Add a webhook in Github notifying `http(s)://<your-host>/webhook` with the set webhook secret (see below)
 - Add RDF data to your repository
+- To customize the (client-side) rendering of the resource add a `renderes.ttl`file to the root of your repository. See the [RDF2h-Documentation](https://rdf2h.github.io/rdf2h-documentation/) to learn how the rendering works
 
 ## Building
 
