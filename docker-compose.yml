@@ -6,6 +6,7 @@ services:
      - "5000:5000"
     environment:
       GITHUB_TOKEN: "${GITHUB_TOKEN}"
+      WEBHOOK_SECRET: "${WEBHOOK_SECRET}"
       RENDERER_LIST: "'https://rdf2h.github.io/renderers/0.0.1/fallback-renderers.ttl' '/renderers'"
     depends_on:
       - "fuseki"
