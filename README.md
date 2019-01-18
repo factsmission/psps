@@ -38,5 +38,5 @@ On [Rancher](https://rancher.com/)
 
 PSPS will download the data from any GitHub repository that send a requests to the webhook. This means that everybody that knows your webhook secret can publish to your PSPS instance!
 
-Create a Webhook under *Project Settings / Webhooks*
+Add a Webhook under *Project Settings / Webhooks*, the Payload URL is `http(s)://<your-host>/webhook`, as Content type choose application/json, PSPS only needs to be notified on `push` events.
 
