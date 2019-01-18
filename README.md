@@ -32,4 +32,4 @@ On windows
 ## Run on [Rancher](https://rancher.com/)
 
  * Add Stack for psps
- * Configure using the file [docker-compompose-no-build.yml](docker-compompose-no-build.yml), set GITHUB_TOKEN to you GitHub Personal Access Token.
+ * Configure using the file [docker-compose-no-build.yml](docker-compose-no-build.yml), set GITHUB_TOKEN to you GitHub Personal Access Token.
