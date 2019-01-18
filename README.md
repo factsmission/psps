@@ -16,7 +16,7 @@ Create a linked data site serving RDF data from files in a GitHub repository. Fo
 
 ## Starting
 
-You need to get a GitHub personal access token. You can generate one under [Setting / Developer settings / Personal Access tokens](https://github.com/settings/tokens)
+You need to get a GitHub personal access token. You can generate one under [ Account Settings / Developer settings / Personal Access tokens](https://github.com/settings/tokens)
 
 On Unix 
 
@@ -28,8 +28,15 @@ On windows
      $env:WEBHOOK_SECRET="THE WEBHOOK SECRET"
      docker-compose up
 
-
-## Run on [Rancher](https://rancher.com/)
+On [Rancher](https://rancher.com/)
 
  * Add Stack for psps
- * Configure using the file [docker-compose-no-build.yml](docker-compose-no-build.yml), set GITHUB_TOKEN to you GitHub Personal Access Token.
+ * Configure using the file [docker-compose-no-build.yml](docker-compose-no-build.yml), set GITHUB_TOKEN to you GitHub Personal Access Token and WEBHOOK_SECRET to the desired 
+ webhook secret.
+
+## Setting up the webhook
+
+PSPS will download the data from any GitHub repository that send a requests to the webhook. This means that everybody that knows your webhook secret can publish to your PSPS instance!
+
+Create a Webhook under *Project Settings / Webhooks*
+
