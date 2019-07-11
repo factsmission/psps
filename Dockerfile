@@ -1,4 +1,4 @@
-FROM linkedsolutions/tlds
+FROM linkedsolutions/tlds:ld2h-2.2-1
 COPY . /usr/src/app/psps
 COPY config/ /config/
 WORKDIR /usr/src/app/psps
