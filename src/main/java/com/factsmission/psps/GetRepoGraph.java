@@ -81,7 +81,7 @@ public class GetRepoGraph {
         GetRepoGraph instance = new GetRepoGraph(args[0], args[1], true);
         for (Entry<IRI, Graph> entry : instance.getGraphs().entrySet()) {
             System.out.println("------------------------");
-            System.out.println("Graph: "+entry.getKey());
+            System.out.println("Graph: " + entry.getKey());
             Graph g = entry.getValue();
             Serializer serializer = Serializer.getInstance();
             serializer.serialize(System.out, g, "text/turtle");
@@ -91,7 +91,7 @@ public class GetRepoGraph {
     public Map<IRI, Graph> getGraphs() {
         return graphs;
     }
-    
+
     private void processRepository() throws IOException, ParseException {
         System.out.println("Loading RDF data from " + repository);
         String masterURIString = "https://api.github.com/repos/" + repository + "/branches/master";
@@ -141,8 +141,7 @@ public class GetRepoGraph {
 
     private IRI getBaseIRI(URL baseUrlFile) throws IOException, ParseException {
         if (baseUrlFile != null) {
-            try (InputStream baseUrlStream = getAuthenticatedStream(baseUrlFile);
-                    BufferedReader stuffJsonReader = new BufferedReader(new InputStreamReader(baseUrlStream, "utf-8"))) {
+            try ( InputStream baseUrlStream = getAuthenticatedStream(baseUrlFile);  BufferedReader stuffJsonReader = new BufferedReader(new InputStreamReader(baseUrlStream, "utf-8"))) {
                 JSONParser jsonParser = new JSONParser();
                 Object obj = jsonParser.parse(stuffJsonReader);
                 JSONObject jsonObject = (JSONObject) obj;
@@ -153,17 +152,17 @@ public class GetRepoGraph {
         } else {
             return getDefaultBaseIRI();
         }
-	}
-
-	private IRI getDefaultBaseIRI() {
-		return new IRI("https://raw.githubusercontent.com/"+repository+"/master/");
     }
-    
-    private IRI getRepoIRI() {
-		return new IRI("https://github.com/"+repository);
-	}
 
-	private void processFile(String path, URL stuffURL) throws IOException, ParseException {
+    private IRI getDefaultBaseIRI() {
+        return new IRI("https://raw.githubusercontent.com/" + repository + "/master/");
+    }
+
+    private IRI getRepoIRI() {
+        return new IRI("https://github.com/" + repository);
+    }
+
+    private void processFile(String path, URL stuffURL) throws IOException, ParseException {
         String rdfType = getRdfFormat(path);
         if (rdfType != null) {
             loadStuffToGraph(stuffURL, path, rdfType);
@@ -188,9 +187,9 @@ public class GetRepoGraph {
                 throw new RuntimeException("Something bad happened", ex);
             }
         }
-	}
+    }
 
-	protected void loadStuffToGraph(URL stuffURL, String path, String rdfType) throws UnsupportedEncodingException, RuntimeException, ParseException, IOException {
+    protected void loadStuffToGraph(URL stuffURL, String path, String rdfType) throws UnsupportedEncodingException, RuntimeException, ParseException, IOException {
         InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
         Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
         JSONParser jsonParser = new JSONParser();
@@ -200,7 +199,7 @@ public class GetRepoGraph {
         if (contentBase64 != null) {
             try {
                 String content = new String(Base64.getMimeDecoder().decode(contentBase64));
-                try (InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"))) {
+                try ( InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"))) {
                     IRI baseIRI = constructFileBaseIRI(path);
                     if (supressFileExtension) {
                         baseIRI = supressExtension(baseIRI);
@@ -221,9 +220,9 @@ public class GetRepoGraph {
             string = string.substring(0, lastDotPos);
         }
         return new IRI(string);
-	}
+    }
 
-	IRI constructFileBaseIRI(String path) {
+    IRI constructFileBaseIRI(String path) {
         return new IRI(baseIRI.getUnicodeString() + path);
     }
 
@@ -253,6 +252,5 @@ public class GetRepoGraph {
         }
         return null;
     }
-
 
 }
