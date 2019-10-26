@@ -167,11 +167,11 @@ public class GetRepoGraph {
         if (rdfType != null) {
             loadStuffToGraph(stuffURL, path, rdfType);
         } else {
-            loadStufToFileStore(stuffURL, path, rdfType);
+            loadStufToFileStore(stuffURL, path);
         }
     }
 
-    private void loadStufToFileStore(URL stuffURL, String path, String rdfType) throws IOException, ParseException {
+    private void loadStufToFileStore(URL stuffURL, String path) throws IOException, ParseException {
         InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
         Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
         JSONParser jsonParser = new JSONParser();
