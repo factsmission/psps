@@ -103,8 +103,8 @@ public class RepositoryProcessor {
             String contentBase64 = (String) jsonObject.get("content");
             if (contentBase64 != null) {
                 try {
-                    String content = new String(Base64.getMimeDecoder().decode(contentBase64));
-                    try ( InputStream contentInputStream = new ByteArrayInputStream(content.getBytes("utf-8"))) {
+                    byte[] content = Base64.getMimeDecoder().decode(contentBase64);
+                    try ( InputStream contentInputStream = new ByteArrayInputStream(content)) {
                         IRI baseIRI = constructFileBaseIRI(path);
                         if (supressFileExtension) {
                             baseIRI = supressExtension(baseIRI);
