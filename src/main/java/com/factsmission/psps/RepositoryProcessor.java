@@ -172,6 +172,26 @@ public class RepositoryProcessor {
         IRI constructFileBaseIRI(String path) {
             return new IRI(baseIRI.getUnicodeString() + path);
         }
+        
+        private IRI getBaseIRI(URL baseUrlFile) throws IOException, ParseException {
+            if (baseUrlFile != null) {
+                try ( InputStream baseUrlStream = getAuthenticatedStream(baseUrlFile);  BufferedReader stuffJsonReader = new BufferedReader(new InputStreamReader(baseUrlStream, "utf-8"))) {
+                    JSONParser jsonParser = new JSONParser();
+                    Object obj = jsonParser.parse(stuffJsonReader);
+                    JSONObject jsonObject = (JSONObject) obj;
+                    String contentBase64 = (String) jsonObject.get("content");
+                    String content = new String(Base64.getMimeDecoder().decode(contentBase64), "UTF-8");
+                    if (content.trim().charAt(0) == '{') {
+                        JSONObject contentObject = (JSONObject) jsonParser.parse(content);
+                        return new IRI((String) contentObject.get(branch));
+                    } else {
+                        return new IRI(content.trim());
+                    }
+                }
+            } else {
+                return getDefaultBaseIRI();
+            }
+        }
 
     }
 
@@ -227,22 +247,6 @@ public class RepositoryProcessor {
         }
     }
 
-    
-
-    private IRI getBaseIRI(URL baseUrlFile) throws IOException, ParseException {
-        if (baseUrlFile != null) {
-            try ( InputStream baseUrlStream = getAuthenticatedStream(baseUrlFile);  BufferedReader stuffJsonReader = new BufferedReader(new InputStreamReader(baseUrlStream, "utf-8"))) {
-                JSONParser jsonParser = new JSONParser();
-                Object obj = jsonParser.parse(stuffJsonReader);
-                JSONObject jsonObject = (JSONObject) obj;
-                String contentBase64 = (String) jsonObject.get("content");
-                String content = new String(Base64.getMimeDecoder().decode(contentBase64));
-                return new IRI(content.trim());
-            }
-        } else {
-            return getDefaultBaseIRI();
-        }
-    }
 
     private IRI getDefaultBaseIRI() {
         return new IRI("https://raw.githubusercontent.com/" + repository + "/master/");

@@ -4,11 +4,17 @@ Create a linked data site serving RDF data from files in a GitHub repository. Fo
 
 ## How to use it?
 
-- Add a BASEURI file to the root of your repo with the base URI of your data
+- Add a BASEURI file to the root of your repo with the base URI of your data (see below)
 - Start an instance of  PSPS
 - Add a webhook in Github notifying `http(s)://<your-host>/webhook` with the set webhook secret (see below)
 - Add RDF data to your repository
 - To customize the (client-side) rendering of the resource add a `renderes.ttl`file to the root of your repository. See the [RDF2h-Documentation](https://rdf2h.github.io/rdf2h-documentation/) to learn how the rendering works
+
+### Specifying base URI
+
+The file BASEURI in the root of the repository can either directly contain the base URI for the branch containg the file or a JSON object with branch names as keys and base URIs as values.
+Having such a JSON is handy as it allows to have staging branches with proposed modifications differing from the main branch only in the proposed change and not also in the BASEURI file.
+
 
 ## Building
 
