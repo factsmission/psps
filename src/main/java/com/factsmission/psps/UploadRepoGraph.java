@@ -62,7 +62,7 @@ public class UploadRepoGraph {
     }
 
     public void getAndUpload() throws IOException, ParseException {
-        GetRepoGraphs getRepoGraph = new GetRepoGraphs(arguments.repository(), arguments.token(), arguments.supressFileExtensions());
+        RepositoryProcessor getRepoGraph = new RepositoryProcessor(arguments.repository(), arguments.token(), arguments.supressFileExtensions());
         IRI repoIri = new IRI("https://github.com/"+arguments.repository());
 		Set<IRI> graphsFromRepoBeforeUpload = getGraphsWithSource(repoIri);
         for (Entry<IRI, Graph> entry : getRepoGraph.getGraphs().entrySet()) {

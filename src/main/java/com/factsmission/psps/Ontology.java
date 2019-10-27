@@ -34,5 +34,5 @@ public class Ontology {
     public static final IRI repository = new IRI("http://linked.guru/ontology#repository");
     public static final IRI updateEndpoint = new IRI("http://linked.guru/ontology#updateEndpoint");
     public static final IRI latestCommit = new IRI("http://linked.guru/ontology#latestCommit");
-	public static final IRI webhookSecret = new IRI("http://linked.guru/ontology#webhookSecret");
+    public static final IRI webhookSecret = new IRI("http://linked.guru/ontology#webhookSecret");
 }
