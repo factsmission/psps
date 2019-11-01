@@ -26,7 +26,6 @@ package com.factsmission.psps;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,15 +52,15 @@ public class RepositoryProcessor {
 
     private final Parser parser = Parser.getInstance();
 
-    private boolean supressFileExtension;
+    private final boolean supressFileExtension;
     private final Set<BranchProcessor> branchProcessors = new HashSet<>();
     private final Repository repository;
 
     class BranchProcessor {
 
         private IRI baseIRI;
-        private Map<IRI, Graph> graphs = new HashMap<IRI, Graph>();
-        private FileStorage fileStorage = new FileStorage();
+        private final Map<IRI, Graph> graphs = new HashMap<>();
+        private final FileStorage fileStorage = new FileStorage();
         private final String branch;
 
         private BranchProcessor(String branch) throws IOException {
