@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2017 FactsMission AG.
+ * Copyright 2019 FactsMission AG.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,20 +23,13 @@
  */
 package com.factsmission.psps;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -55,9 +48,7 @@ import org.json.simple.parser.ParseException;
 
 public class RepositoryProcessor {
 
-    private final String repository;
-    private final String token;
-    private String commitURL;
+    private final String repositoryName;
 
     private final Parser parser = Parser.getInstance();
 
@@ -65,6 +56,7 @@ public class RepositoryProcessor {
 
     private final URL apiBaseURI;
     private final Set<BranchProcessor> branchProcessors = new HashSet<>();
+    private final Repository repository;
 
     class BranchProcessor {
 
@@ -82,112 +74,79 @@ public class RepositoryProcessor {
             return graphs;
         }
 
-        private void loadStufToFileStore(URL stuffURL, String path) throws IOException, ParseException {
-            JSONObject jsonObject = getJsonObject(stuffURL);
-            String contentBase64 = (String) jsonObject.get("content");
-            if (contentBase64 != null) {
-                try {
-                    byte[] content = Base64.getMimeDecoder().decode(contentBase64);
-                    IRI pathIRI = constructFileBaseIRI(path);
-                    fileStorage.put(pathIRI, content);
-                } catch (IllegalArgumentException ex) {
-                    throw new RuntimeException("Something bad happened", ex);
-                }
-            }
+        private void loadStufToFileStore(byte[] content, String path) throws IOException {
+            try {
+                IRI pathIRI = constructFileBaseIRI(path);
+                fileStorage.put(pathIRI, content);
+            } catch (IllegalArgumentException ex) {
+                throw new RuntimeException("Something bad happened", ex);
+            }     
         }
 
-        protected void loadStuffToGraph(URL stuffURL, String path, String rdfType) throws UnsupportedEncodingException, RuntimeException, ParseException, IOException {
-            JSONObject jsonObject = getJsonObject(stuffURL);
-            String contentBase64 = (String) jsonObject.get("content");
-            if (contentBase64 != null) {
-                try {
-                    byte[] content = Base64.getMimeDecoder().decode(contentBase64);
-                    try ( InputStream contentInputStream = new ByteArrayInputStream(content)) {
-                        IRI baseIRI = constructFileBaseIRI(path);
-                        if (supressFileExtension) {
-                            baseIRI = supressExtension(baseIRI);
-                        }
-                        Graph graph = parser.parse(contentInputStream, rdfType, baseIRI);
-                        graphs.put(baseIRI, graph);
-                    } catch (RuntimeException ex) {
-                        throw new RuntimeException("Processing file at "+path, ex);
-                    }
-                } catch (IllegalArgumentException ex) {
-                    throw new RuntimeException("Something bad happened", ex);
+        protected void loadStuffToGraph(byte[] content, String path, String rdfType) throws IOException {
+            try ( InputStream contentInputStream = new ByteArrayInputStream(content)) {
+                IRI baseIRI = constructFileBaseIRI(path);
+                if (supressFileExtension) {
+                    baseIRI = supressExtension(baseIRI);
                 }
+                Graph graph = parser.parse(contentInputStream, rdfType, baseIRI);
+                graphs.put(baseIRI, graph);
+            } catch (RuntimeException ex) {
+                throw new RuntimeException("Processing file at "+path, ex);
             }
         }
         
-        private void processFile(String path, URL stuffURL) throws IOException, ParseException {
+        private void processFile(String path) throws IOException, ParseException {
             String rdfType = getRdfFormat(path);
+            byte[] content = repository.getContent(path);
+            if (content == null) {
+                //this is the case for directories
+                return;
+            }
             if (rdfType != null) {
-                loadStuffToGraph(stuffURL, path, rdfType);
+                loadStuffToGraph(content, path, rdfType);
             } else {
-                loadStufToFileStore(stuffURL, path);
+                loadStufToFileStore(content, path);
             }
         }
         
         private void processBranch() throws IOException, ParseException {
-            URL masterURI = new URL(apiBaseURI, "branches/"+branch);
-            JSONObject master = getJsonObject(masterURI);
-            JSONObject commitA = (JSONObject) master.get("commit");
-            JSONObject commitB = (JSONObject) commitA.get("commit");
-            commitURL = (String) commitA.get("html_url");
-            JSONObject tree = (JSONObject) commitB.get("tree");
-            String treeURLString = (String) tree.get("url");
-            processTree(treeURLString);
-            Graph repoGraph = new SimpleGraph();
-            repoGraph.add(new TripleImpl(getBranchIRI(), Ontology.latestCommit, new IRI(commitURL)));
-            repoGraph.add(new TripleImpl(getBranchIRI(), Ontology.repository, getRepoIRI()));
-            for (Entry<IRI, Graph> entry : graphs.entrySet()) {
-                repoGraph.add(new TripleImpl(entry.getKey(), DCTERMS.source, getBranchIRI()));
+            synchronized(repository) {
+                repository.useBranch(branch);
+                baseIRI = getBaseIRI(repository.getContent("BASEURI"));
+                for (String path : repository.getPaths()) {
+                    processFile(path);
+                };
+                Graph repoGraph = new SimpleGraph();
+                repoGraph.add(new TripleImpl(getBranchIRI(), Ontology.latestCommit, new IRI(repository.getCommitURL())));
+                repoGraph.add(new TripleImpl(getBranchIRI(), Ontology.repository, getRepoIRI()));
+                for (Entry<IRI, Graph> entry : graphs.entrySet()) {
+                    repoGraph.add(new TripleImpl(entry.getKey(), DCTERMS.source, getBranchIRI()));
+                }
+                graphs.put(getBranchIRI(), repoGraph);
             }
-            graphs.put(getBranchIRI(), repoGraph);
         }
         
         private IRI getBranchIRI() {
-            return new IRI("https://github.com/" + repository+"/"+branch);
+            return new IRI("https://github.com/" + repositoryName+"/"+branch);
         }
         
-        private void processTree(String treeURLString) throws IOException, ParseException {
-            String treeURLRecursiveString = treeURLString + "?recursive=1";
-            URL treeURLRecursive = new URL(treeURLRecursiveString);
-            JSONObject jsonObject = getJsonObject(treeURLRecursive);
-            JSONArray tree = (JSONArray) jsonObject.get("tree");
-            Map<String, URL> path2Stuff = new HashMap<>();
-            Iterator<JSONObject> iterator = tree.iterator();
-            while (iterator.hasNext()) {
-                JSONObject next = iterator.next();
-                String path = (String) next.get("path");
-                String url = (String) next.get("url");
-                URL stuffURL = new URL(url);
-                path2Stuff.put(path, stuffURL);
-            }
-            baseIRI = getBaseIRI(path2Stuff.get("BASEURI"));
-            for (Entry<String, URL> entry : path2Stuff.entrySet()) {
-                processFile(entry.getKey(), entry.getValue());
-            };
-        }
+        
         
         IRI constructFileBaseIRI(String path) {
             return new IRI(baseIRI.getUnicodeString() + path);
         }
         
-        private IRI getBaseIRI(URL baseUrlFile) throws IOException, ParseException {
-            if (baseUrlFile != null) {
-                try ( InputStream baseUrlStream = getAuthenticatedStream(baseUrlFile);  BufferedReader stuffJsonReader = new BufferedReader(new InputStreamReader(baseUrlStream, "utf-8"))) {
+        private IRI getBaseIRI(byte[] contentBytes) throws IOException, ParseException {
+            if (contentBytes != null) {
+                String content = new String(contentBytes, "UTF-8");
+                if (content.trim().charAt(0) == '{') {
                     JSONParser jsonParser = new JSONParser();
-                    Object obj = jsonParser.parse(stuffJsonReader);
-                    JSONObject jsonObject = (JSONObject) obj;
-                    String contentBase64 = (String) jsonObject.get("content");
-                    String content = new String(Base64.getMimeDecoder().decode(contentBase64), "UTF-8");
-                    if (content.trim().charAt(0) == '{') {
-                        JSONObject contentObject = (JSONObject) jsonParser.parse(content);
-                        return new IRI((String) contentObject.get(branch));
-                    } else {
-                        return new IRI(content.trim());
-                    }
-                }
+                    JSONObject contentObject = (JSONObject) jsonParser.parse(content);
+                    return new IRI((String) contentObject.get(branch));
+                } else {
+                    return new IRI(content.trim());
+                }   
             } else {
                 return getDefaultBaseIRI();
             }
@@ -198,9 +157,8 @@ public class RepositoryProcessor {
     RepositoryProcessor(String repository, String token, boolean supressFileExtension) throws IOException {
         String apiBaseURIString = "https://api.github.com/repos/" + repository + "/";
         this.apiBaseURI = new URL(apiBaseURIString);
-        this.repository = repository;
-        this.token = token;
-        this.commitURL = "";
+        this.repositoryName = repository;
+        this.repository = new Repository(repository, token);
         this.supressFileExtension = supressFileExtension;
         try {
             processRepository();
@@ -239,7 +197,7 @@ public class RepositoryProcessor {
     }
 
     private void processRepository() throws IOException, ParseException {
-        System.out.println("Loading RDF data from " + repository);
+        System.out.println("Loading RDF data from " + repositoryName);
         String[] branches = getBranches();
         for (String branch : branches) {
             BranchProcessor branchProcessor = new BranchProcessor(branch);
@@ -249,34 +207,13 @@ public class RepositoryProcessor {
 
 
     private IRI getDefaultBaseIRI() {
-        return new IRI("https://raw.githubusercontent.com/" + repository + "/master/");
+        return new IRI("https://raw.githubusercontent.com/" + repositoryName + "/master/");
     }
 
     private IRI getRepoIRI() {
-        return new IRI("https://github.com/" + repository);
+        return new IRI("https://github.com/" + repositoryName);
     }
 
-    
-
-    private Object getParsedJson(URL stuffURL) throws IOException {
-        try {
-            InputStream stuffJsonStream = getAuthenticatedStream(stuffURL);
-            Reader stuffJsonReader = new InputStreamReader(stuffJsonStream, "utf-8");
-            JSONParser jsonParser = new JSONParser();
-            Object obj = jsonParser.parse(stuffJsonReader);
-            return obj;
-        } catch (ParseException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    private JSONObject getJsonObject(URL stuffURL) throws IOException {
-        return (JSONObject) getParsedJson(stuffURL);
-    }
-
-    private JSONArray getJsonArray(URL stuffURL) throws IOException {
-        return (JSONArray) getParsedJson(stuffURL);
-    }
 
     private IRI supressExtension(IRI iri) {
         String string = iri.getUnicodeString();
@@ -287,14 +224,6 @@ public class RepositoryProcessor {
         return new IRI(string);
     }
 
-    
-
-    private InputStream getAuthenticatedStream(URL url) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        String authStringEnoded = Base64.getEncoder().encodeToString((token + ":").getBytes("utf-8"));
-        connection.addRequestProperty("Authorization", "Basic " + authStringEnoded);
-        return connection.getInputStream();
-    }
 
     /**
      *
@@ -317,7 +246,7 @@ public class RepositoryProcessor {
     }
 
     private String[] getBranches() throws IOException {
-        JSONArray jsonArray = getJsonArray(new URL(apiBaseURI, "branches"));
+        JSONArray jsonArray = repository.getJsonArray(new URL(apiBaseURI, "branches"));
         Set<String> resultSet = new HashSet<>();
         jsonArray.forEach((obj) -> {
             resultSet.add((String) ((JSONObject) obj).get("name"));
