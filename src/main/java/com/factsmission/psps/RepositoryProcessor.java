@@ -40,8 +40,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.clerezza.commons.rdf.Graph;
 import org.apache.clerezza.commons.rdf.IRI;
@@ -111,6 +109,8 @@ public class RepositoryProcessor {
                         }
                         Graph graph = parser.parse(contentInputStream, rdfType, baseIRI);
                         graphs.put(baseIRI, graph);
+                    } catch (RuntimeException ex) {
+                        throw new RuntimeException("Processing file at "+path, ex);
                     }
                 } catch (IllegalArgumentException ex) {
                     throw new RuntimeException("Something bad happened", ex);
