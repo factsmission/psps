@@ -32,8 +32,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -63,7 +65,7 @@ public class Repository {
         }
     }
     
-    InputStream getAuthenticatedStream(URL url) throws IOException {
+    private InputStream getAuthenticatedStream(URL url) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         String authStringEnoded = Base64.getEncoder().encodeToString((token + ":").getBytes("utf-8"));
         connection.addRequestProperty("Authorization", "Basic " + authStringEnoded);
@@ -83,11 +85,11 @@ public class Repository {
         }
     }
 
-    JSONObject getJsonObject(URL stuffURL) throws IOException {
+    private JSONObject getJsonObject(URL stuffURL) throws IOException {
         return (JSONObject) getParsedJson(stuffURL);
     }
 
-    JSONArray getJsonArray(URL stuffURL) throws IOException {
+    private JSONArray getJsonArray(URL stuffURL) throws IOException {
         return (JSONArray) getParsedJson(stuffURL);
     }
 
@@ -145,4 +147,13 @@ public class Repository {
         }
     }
     
+    
+    String[] getBranches() throws IOException {
+        JSONArray jsonArray = getJsonArray(new URL(apiBaseURI, "branches"));
+        Set<String> resultSet = new HashSet<>();
+        jsonArray.forEach((obj) -> {
+            resultSet.add((String) ((JSONObject) obj).get("name"));
+        });
+        return resultSet.toArray(new String[resultSet.size()]);
+    }
 }

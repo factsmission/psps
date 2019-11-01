@@ -33,6 +33,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.clerezza.commons.rdf.Graph;
 import org.apache.clerezza.commons.rdf.IRI;
@@ -41,7 +43,6 @@ import org.apache.clerezza.commons.rdf.impl.utils.simple.SimpleGraph;
 import org.apache.clerezza.rdf.core.serializedform.Parser;
 import org.apache.clerezza.rdf.core.serializedform.Serializer;
 import org.apache.clerezza.rdf.ontologies.DCTERMS;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -53,8 +54,6 @@ public class RepositoryProcessor {
     private final Parser parser = Parser.getInstance();
 
     private boolean supressFileExtension;
-
-    private final URL apiBaseURI;
     private final Set<BranchProcessor> branchProcessors = new HashSet<>();
     private final Repository repository;
 
@@ -65,7 +64,7 @@ public class RepositoryProcessor {
         private FileStorage fileStorage = new FileStorage();
         private final String branch;
 
-        private BranchProcessor(String branch) throws IOException, ParseException {
+        private BranchProcessor(String branch) throws IOException {
             this.branch = branch;
             processBranch();
         }
@@ -96,7 +95,7 @@ public class RepositoryProcessor {
             }
         }
         
-        private void processFile(String path) throws IOException, ParseException {
+        private void processFile(String path) throws IOException {
             String rdfType = getRdfFormat(path);
             byte[] content = repository.getContent(path);
             if (content == null) {
@@ -110,13 +109,13 @@ public class RepositoryProcessor {
             }
         }
         
-        private void processBranch() throws IOException, ParseException {
+        private void processBranch() throws IOException {
             synchronized(repository) {
                 repository.useBranch(branch);
                 baseIRI = getBaseIRI(repository.getContent("BASEURI"));
                 for (String path : repository.getPaths()) {
                     processFile(path);
-                };
+                }
                 Graph repoGraph = new SimpleGraph();
                 repoGraph.add(new TripleImpl(getBranchIRI(), Ontology.latestCommit, new IRI(repository.getCommitURL())));
                 repoGraph.add(new TripleImpl(getBranchIRI(), Ontology.repository, getRepoIRI()));
@@ -137,13 +136,18 @@ public class RepositoryProcessor {
             return new IRI(baseIRI.getUnicodeString() + path);
         }
         
-        private IRI getBaseIRI(byte[] contentBytes) throws IOException, ParseException {
+        private IRI getBaseIRI(byte[] contentBytes) throws IOException {
             if (contentBytes != null) {
                 String content = new String(contentBytes, "UTF-8");
                 if (content.trim().charAt(0) == '{') {
-                    JSONParser jsonParser = new JSONParser();
-                    JSONObject contentObject = (JSONObject) jsonParser.parse(content);
-                    return new IRI((String) contentObject.get(branch));
+                    try {
+                        JSONParser jsonParser = new JSONParser();
+                        JSONObject contentObject = (JSONObject) jsonParser.parse(content);
+                        return new IRI((String) contentObject.get(branch));
+                    } catch (ParseException ex) {
+                        Logger.getLogger(RepositoryProcessor.class.getName()).log(Level.SEVERE, "Couln'd parse BASEURI, usind default base IRI", ex);
+                        return getDefaultBaseIRI();
+                    }
                 } else {
                     return new IRI(content.trim());
                 }   
@@ -155,16 +159,10 @@ public class RepositoryProcessor {
     }
 
     RepositoryProcessor(String repository, String token, boolean supressFileExtension) throws IOException {
-        String apiBaseURIString = "https://api.github.com/repos/" + repository + "/";
-        this.apiBaseURI = new URL(apiBaseURIString);
         this.repositoryName = repository;
         this.repository = new Repository(repository, token);
         this.supressFileExtension = supressFileExtension;
-        try {
-            processRepository();
-        } catch (ParseException ex) {
-            throw new IOException(ex);
-        }
+        processRepository();
     }
 
     public static void main(String[] args) throws Exception {
@@ -196,9 +194,9 @@ public class RepositoryProcessor {
         return result;
     }
 
-    private void processRepository() throws IOException, ParseException {
+    private void processRepository() throws IOException {
         System.out.println("Loading RDF data from " + repositoryName);
-        String[] branches = getBranches();
+        String[] branches = repository.getBranches();
         for (String branch : branches) {
             BranchProcessor branchProcessor = new BranchProcessor(branch);
             branchProcessors.add(branchProcessor);
@@ -245,13 +243,5 @@ public class RepositoryProcessor {
         return null;
     }
 
-    private String[] getBranches() throws IOException {
-        JSONArray jsonArray = repository.getJsonArray(new URL(apiBaseURI, "branches"));
-        Set<String> resultSet = new HashSet<>();
-        jsonArray.forEach((obj) -> {
-            resultSet.add((String) ((JSONObject) obj).get("name"));
-        });
-        return resultSet.toArray(new String[resultSet.size()]);
-    }
 
 }
