@@ -160,7 +160,7 @@ public class RepositoryProcessor {
 
     RepositoryProcessor(String repository, String token, boolean supressFileExtension) throws IOException {
         this.repositoryName = repository;
-        this.repository = new Repository(repository, token);
+        this.repository = new ApiAccessRepository(repository, token);
         this.supressFileExtension = supressFileExtension;
         processRepository();
     }
