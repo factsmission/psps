@@ -113,6 +113,9 @@ public class JGitRepository implements Repository {
     @Override
     public byte[] getContent(String repoPath) throws IOException {
         Path path = workingDir.resolve(repoPath);
+        if (!Files.exists(path)) {
+            return null;
+        }
         if (Files.isDirectory(path)) {
             return null;
         }
