@@ -5,3 +5,4 @@ nbactions*.xml
 .project
 .vscode/launch.json
 /psps/
+/checkout/

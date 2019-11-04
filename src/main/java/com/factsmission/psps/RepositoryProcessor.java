@@ -142,7 +142,11 @@ public class RepositoryProcessor {
                     try {
                         JSONParser jsonParser = new JSONParser();
                         JSONObject contentObject = (JSONObject) jsonParser.parse(content);
-                        return new IRI((String) contentObject.get(branch));
+                        String branchPath = (String) contentObject.get(branch);
+                        if (branchPath == null) {
+                            return getDefaultBaseIRI();
+                        }
+                        return new IRI(branchPath);
                     } catch (ParseException ex) {
                         Logger.getLogger(RepositoryProcessor.class.getName()).log(Level.SEVERE, "Couln'd parse BASEURI, usind default base IRI", ex);
                         return getDefaultBaseIRI();
@@ -154,12 +158,16 @@ public class RepositoryProcessor {
                 return getDefaultBaseIRI();
             }
         }
+        
+        private IRI getDefaultBaseIRI() {
+            return new IRI("https://raw.githubusercontent.com/" + repositoryName + "/"+branch+"/");
+        }
 
     }
 
     RepositoryProcessor(String repository, String token, boolean supressFileExtension) throws IOException {
         this.repositoryName = repository;
-        this.repository = new ApiAccessRepository(repository, token);
+        this.repository = new JGitRepository(repository, token); //ApiAccessRepository(repository, token);
         this.supressFileExtension = supressFileExtension;
         processRepository();
     }
@@ -203,9 +211,7 @@ public class RepositoryProcessor {
     }
 
 
-    private IRI getDefaultBaseIRI() {
-        return new IRI("https://raw.githubusercontent.com/" + repositoryName + "/master/");
-    }
+    
 
     private IRI getRepoIRI() {
         return new IRI("https://github.com/" + repositoryName);

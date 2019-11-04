@@ -33,11 +33,11 @@ public interface Repository {
 
     String[] getBranches() throws IOException;
 
-    String getCommitURL();
+    String getCommitURL() throws IOException;
 
     byte[] getContent(String path) throws IOException;
 
-    Iterable<String> getPaths();
+    Iterable<String> getPaths() throws IOException;
 
     void useBranch(String branch) throws IOException;
     
