@@ -123,7 +123,7 @@ public class JGitRepository implements Repository {
     public Iterable<String> getPaths() throws IOException {
         return (Iterable<String>)Files.walk(workingDir)
             .sorted(Comparator.reverseOrder())
-            .map(p -> {System.out.println(p); System.out.println(workingDir.relativize(p)); return workingDir.relativize(p);})
+            .map(p -> workingDir.relativize(p))
             .map(Path::toString)
             .filter(s -> !s.startsWith(".git"))::iterator;
     }
