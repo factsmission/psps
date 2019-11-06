@@ -25,6 +25,7 @@ package com.factsmission.psps.server;
 
 import java.io.FileNotFoundException;
 import java.util.Set;
+import org.apache.clerezza.rdf.utils.GraphNode;
 import org.factsmission.tlds.TemplatingServer;
 
 /**
@@ -33,17 +34,10 @@ import org.factsmission.tlds.TemplatingServer;
  */
 public class Server extends TemplatingServer {
     
-    public Server(String[] args) throws FileNotFoundException {
-        super(args);
+    public Server(GraphNode config) throws FileNotFoundException {
+        super(config);
     }
     
-    public static void main(String[] args) throws Exception {
-        if (args.length < 1) {
-            System.err.println("Argument pointing to configuration required");
-            return;
-        }
-        new Server(args).run();
-    }
 
     @Override
     protected Set<Object> getJaxRsComponents() {

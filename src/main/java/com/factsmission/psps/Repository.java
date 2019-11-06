@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2019 me.
+ * Copyright 2019 FactsMission AG.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,10 +25,7 @@ package com.factsmission.psps;
 
 import java.io.IOException;
 
-/**
- *
- * @author me
- */
+
 public interface Repository {
 
     String[] getBranches() throws IOException;
