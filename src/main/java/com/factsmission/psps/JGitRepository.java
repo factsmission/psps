@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2019 me.
+ * Copyright 2019 FactsMission AG.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,10 +30,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
+import org.eclipse.jgit.api.CreateBranchCommand;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.lib.Ref;
@@ -42,10 +44,7 @@ import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
-/**
- *
- * @author me
- */
+
 public class JGitRepository implements Repository {
 
     private final static Path baseCheckout = Paths.get(System.getProperty("user.dir"), "checkout");
@@ -60,19 +59,22 @@ public class JGitRepository implements Repository {
         this.repoUri = "https://github.com/" + repository + ".git";
         this.userName = token;
         workingDir = baseCheckout.resolve(repository);
-        if (Files.exists(workingDir)) {
-            Files.walk(workingDir)
-                .sorted(Comparator.reverseOrder())
-                .map(Path::toFile)
-                .forEach(File::delete); //TODO recycle
-        }
+        final UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(token, "");
         try {
-            git = Git.cloneRepository()
-                    .setURI(repoUri)
-                    .setDirectory(workingDir.toFile())
-                    .setCloneAllBranches(false)
-                    .setCredentialsProvider(new UsernamePasswordCredentialsProvider(token, ""))
-                    .call();
+            if (Files.exists(workingDir)) {
+                git = Git.open(workingDir.toFile());
+                if (!git.pull().setCredentialsProvider(credentialsProvider).call().isSuccessful()) {
+                    throw new IOException("failed to pull");
+                }
+            } else {        
+                
+                git = Git.cloneRepository()
+                        .setURI(repoUri)
+                        .setDirectory(workingDir.toFile())
+                        .setCloneAllBranches(true)
+                        .setCredentialsProvider(credentialsProvider)
+                        .call();
+            }
            
         } catch (GitAPIException e) {
             throw new RuntimeException(e);
@@ -134,7 +136,21 @@ public class JGitRepository implements Repository {
     @Override
     public void useBranch(String branch) throws IOException {
         try {
-            git.checkout().setName("remotes/origin/"+branch).call();
+            git.branchCreate()
+                        .setName(branch)
+                        .call();
+        } catch (RefAlreadyExistsException e) {
+            //all the better
+        } catch (GitAPIException ex) {
+            throw new IOException(ex);
+        }
+        try {
+            git.checkout().
+                setName(branch).
+                setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK).
+                setStartPoint("origin/" + branch).
+                call();
+            //git.checkout().setName("remotes/origin/"+branch).call();
         } catch (GitAPIException ex) {
             throw new IOException(ex);
         }
