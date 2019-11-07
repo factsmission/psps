@@ -86,16 +86,20 @@ public class Launcher {
 
     private static String removeQuotes(String string) {
         int start, end;
-        if (string.charAt(0) == '\'') {
+        if (isQuote(string.charAt(0)))   {
             start = 1;
         } else {
             start = 0;
         }
-        if (string.charAt(string.length()-1) == '\'') {
+        if (isQuote(string.charAt(string.length()-1))) {
             end = string.length()-1;
         } else {
             end = string.length();
         }
         return string.substring(start, end);
+    }
+
+    private static boolean isQuote(char c) {
+        return (c == '\'') || (c == '\"');
     }
 }
