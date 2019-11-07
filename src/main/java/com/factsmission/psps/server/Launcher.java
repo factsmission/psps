@@ -24,6 +24,8 @@
 package com.factsmission.psps.server;
 
 import com.factsmission.psps.Ontology;
+import org.apache.clerezza.commons.rdf.Graph;
+import org.apache.clerezza.commons.rdf.impl.utils.simple.SimpleGraph;
 import org.apache.clerezza.rdf.utils.GraphNode;
 import org.factsmission.tlds.TLDS;
 
@@ -42,12 +44,14 @@ public class Launcher {
             return;
         }
         GraphNode config = solutions.linked.slds.Server.parseConfig(args);
-        setEnvVarConfig(config);
+        config = setEnvVarConfig(config);
         new Server(config).run();
 
     }
 
-    private static void setEnvVarConfig(GraphNode config) {
+    private static GraphNode setEnvVarConfig(GraphNode orig) {
+        Graph g = new SimpleGraph(orig.getGraph());
+        GraphNode config = new GraphNode(orig.getNode(), g);
         {
             String token = System.getenv("GITHUB_TOKEN");
             if (token != null) {
@@ -69,5 +73,6 @@ public class Launcher {
                 config.addPropertyValue(TLDS.renderers, renderes);
             }
         }
+        return config;
     }
 }
