@@ -30,9 +30,9 @@ import org.apache.clerezza.commons.rdf.IRI;
  * @author noam
  */
 public class Ontology {
-    public static final IRI token = new IRI("http://linked.guru/ontology#token");
-    public static final IRI repository = new IRI("http://linked.guru/ontology#repository");
-    public static final IRI updateEndpoint = new IRI("http://linked.guru/ontology#updateEndpoint");
-    public static final IRI latestCommit = new IRI("http://linked.guru/ontology#latestCommit");
-    public static final IRI webhookSecret = new IRI("http://linked.guru/ontology#webhookSecret");
+    public static final IRI token = new IRI("https://schema.factsmission.com/psps/token");
+    public static final IRI repository = new IRI("https://schema.factsmission.com/psps/repository");
+    public static final IRI updateEndpoint = new IRI("https://schema.factsmission.com/psps/updateEndpoint");
+    public static final IRI latestCommit = new IRI("https://schema.factsmission.com/psps/latestCommit");
+    public static final IRI webhookSecret = new IRI("https://schema.factsmission.com/psps/webhookSecret");
 }

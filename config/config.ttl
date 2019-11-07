@@ -1,6 +1,6 @@
 @prefix slds: <http://vocab.linked.solutions/slds#> .
 @prefix tlds: <http://vocab.linked.solutions/tlds#> .
-@prefix lg: <http://linked.guru/ontology#> .
+@prefix psps: <https://schema.factsmission.com/psps/> .
 
 <>
     slds:port 5000 ;
@@ -14,12 +14,12 @@
     tlds:renderers ( "https://rdf2h.github.io/renderers/0.0.5/fallback-renderers.ttl" "/renderers" ) .
 
 <>  
-    lg:token "[PUT TOKEN HERE]".
+    psps:token "[PUT TOKEN HERE]".
 
 <>  
-    lg:webhookSecret "".
+    psps:webhookSecret "".
 
 <http://fuseki:3030/psps/sparql>
     slds:userName "admin" ;
     slds:password "pw123";
-    lg:updateEndpoint <http://fuseki:3030/psps/update> .
+    psps:updateEndpoint <http://fuseki:3030/psps/update> .
