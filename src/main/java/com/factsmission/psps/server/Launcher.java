@@ -24,9 +24,12 @@
 package com.factsmission.psps.server;
 
 import com.factsmission.psps.Ontology;
+import org.apache.clerezza.commons.rdf.BlankNode;
 import org.apache.clerezza.commons.rdf.Graph;
+import org.apache.clerezza.commons.rdf.impl.utils.PlainLiteralImpl;
 import org.apache.clerezza.commons.rdf.impl.utils.simple.SimpleGraph;
 import org.apache.clerezza.rdf.utils.GraphNode;
+import org.apache.clerezza.rdf.utils.RdfList;
 import org.factsmission.tlds.TLDS;
 
 /**
@@ -67,12 +70,32 @@ public class Launcher {
             }
         }
         {
-            String renderes = System.getenv("RENDERER_LIST");
-            if (renderes != null) {
+            String renderesString = System.getenv("RENDERER_LIST");
+            if (renderesString != null) {
                 config.deleteProperties(TLDS.renderers);
-                config.addPropertyValue(TLDS.renderers, renderes);
+                String[] renderers = renderesString.split(" ");
+                RdfList list = new RdfList(new BlankNode(), g);
+                for (String renderer : renderers) {
+                    list.add(new PlainLiteralImpl(removeQuotes(renderer)));
+                }
+                config.addProperty(TLDS.renderers, list.getListRDFTerm());
             }
         }
         return config;
+    }
+
+    private static String removeQuotes(String string) {
+        int start, end;
+        if (string.charAt(0) == '\'') {
+            start = 1;
+        } else {
+            start = 0;
+        }
+        if (string.charAt(string.length()-1) == '\'') {
+            end = string.length()-1;
+        } else {
+            end = string.length();
+        }
+        return string.substring(start, end);
     }
 }
