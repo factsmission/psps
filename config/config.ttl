@@ -11,7 +11,7 @@
     ].
 
 <>  
-    tlds:renderers ( "https://rdf2h.github.io/renderers/0.0.1/fallback-renderers.ttl" "/renderers" ) .
+    tlds:renderers ( "https://rdf2h.github.io/renderers/0.0.5/fallback-renderers.ttl" "/renderers" ) .
 
 <>  
     lg:token "[PUT TOKEN HERE]".
