@@ -1,5 +1,5 @@
 @prefix slds: <https://vocab.linked.solutions/slds/> .
-@prefix tlds: <http://vocab.linked.solutions/tlds#> .
+@prefix tlds: <https://vocab.linked.solutions/tlds/> .
 @prefix psps: <https://schema.factsmission.com/psps/> .
 
 <>
