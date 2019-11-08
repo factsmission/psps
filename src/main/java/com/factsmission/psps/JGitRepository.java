@@ -23,7 +23,6 @@
  */
 package com.factsmission.psps;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,13 +52,14 @@ public class JGitRepository implements Repository {
     private Git git;
     private final Path workingDir;
     private final String repoName;
-
+    final UsernamePasswordCredentialsProvider credentialsProvider;
+    
     JGitRepository(String repository, String token) throws IOException {
         this.repoName = repository;
         this.repoUri = "https://github.com/" + repository + ".git";
         this.userName = token;
         workingDir = baseCheckout.resolve(repository);
-        final UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(token, "");
+        credentialsProvider = new UsernamePasswordCredentialsProvider(token, "");
         try {
             if (Files.exists(workingDir)) {
                 git = Git.open(workingDir.toFile());
@@ -136,22 +136,24 @@ public class JGitRepository implements Repository {
     @Override
     public void useBranch(String branch) throws IOException {
         try {
-            git.branchCreate()
-                        .setName(branch)
-                        .call();
-        } catch (RefAlreadyExistsException e) {
-            //all the better
-        } catch (GitAPIException ex) {
-            throw new IOException(ex);
-        }
-        try {
-            git.checkout().
-                setName(branch).
-                setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK).
-                setStartPoint("origin/" + branch).
-                call();
-            //git.checkout().setName("remotes/origin/"+branch).call();
-        } catch (GitAPIException ex) {
+            try {
+                git.checkout().
+                    setCreateBranch(true).
+                    setName(branch).
+                    setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK).
+                    setStartPoint("origin/" + branch).                    
+                    call();
+                //git.pull().call();
+                //git.checkout().setName("remotes/origin/"+branch).call();
+            } catch (RefAlreadyExistsException e) {
+                //all the better
+                git.checkout().
+                        setName(branch).call();
+                if (!git.pull().setCredentialsProvider(credentialsProvider).call().isSuccessful()) {
+                    throw new IOException("failed to pull");
+                }
+            } 
+        }catch (GitAPIException ex) {
             throw new IOException(ex);
         }
     }
