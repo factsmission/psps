@@ -90,7 +90,8 @@ public class RepositoryProcessor {
                 Graph graph = parser.parse(contentInputStream, rdfType, baseIRI);
                 graphs.put(baseIRI, graph);
             } catch (RuntimeException ex) {
-                throw new RuntimeException("Processing file at "+path, ex);
+                //TODO log to meta-graph
+                Logger.getLogger(RepositoryProcessor.class.getName()).log(Level.SEVERE, "Couldn't parse file at "+path, ex);
             }
         }
         
