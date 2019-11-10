@@ -64,11 +64,11 @@ public class UploadRepoGraph {
     public void getAndUpload() throws IOException, ParseException {
         RepositoryProcessor getRepoGraph = new RepositoryProcessor(arguments.repository(), arguments.token(), arguments.supressFileExtensions());
         IRI repoIri = new IRI("https://github.com/" + arguments.repository());
-        Set<IRI> graphsFromRepoBeforeUpload = getGraphsWithSource(repoIri);
+        Set<IRI> graphsFromRepoBeforeUpload = getGraphsWithSourceRepo(repoIri);
         for (Entry<IRI, Graph> entry : getRepoGraph.getGraphs().entrySet()) {
             uploadGraph(entry.getKey().getUnicodeString(), entry.getValue());
         }
-        graphsFromRepoBeforeUpload.removeAll(getGraphsWithSource(repoIri));
+        graphsFromRepoBeforeUpload.removeAll(getGraphsWithSourceRepo(repoIri));
         dropGraphs(graphsFromRepoBeforeUpload);
     }
 
@@ -89,7 +89,20 @@ public class UploadRepoGraph {
         }
     }
 
-    private Set<IRI> getGraphsWithSource(IRI iri) throws IOException {
+    private Set<IRI> getGraphsWithSourceRepo(IRI iri) throws IOException {
+        SparqlClient sparqlClient = new SparqlClient(arguments.queryEndpoint());
+        String query = "SELECT DISTINCT ?branch WHERE { GRAPH ?branch { "
+                + "?branch <"+Ontology.repository.getUnicodeString()+"> <"+iri.getUnicodeString()+">"
+                + "} }";
+        Set<IRI> result = new HashSet<>();
+        List<Map<String, RDFTerm>> results = sparqlClient.queryResultSet(query);
+        for (Map<String, RDFTerm> row : results) {
+            result.addAll(getGraphsWithSourceBranch((IRI) row.get("branch")));
+        }
+        return result;
+    }
+    
+    private Set<IRI> getGraphsWithSourceBranch(IRI iri) throws IOException {
         Set<IRI> result = new HashSet<>();
         SparqlClient sparqlClient = new SparqlClient(arguments.queryEndpoint());
         String query = "SELECT DISTINCT ?graph WHERE { GRAPH <" + iri.getUnicodeString() + "> {\n"
