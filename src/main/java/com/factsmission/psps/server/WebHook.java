@@ -23,7 +23,6 @@
  */
 package com.factsmission.psps.server;
 
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
@@ -35,8 +34,6 @@ import javax.json.JsonReader;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -47,7 +44,6 @@ import com.factsmission.psps.UploadRepoGraphArgs;
 import org.apache.clerezza.commons.rdf.IRI;
 import org.apache.clerezza.commons.rdf.RDFTerm;
 import org.apache.clerezza.rdf.utils.GraphNode;
-import org.json.simple.parser.ParseException;
 
 import solutions.linked.slds.ConfigUtils;
 
@@ -74,62 +70,62 @@ public class WebHook {
                 : null;
 
         if ((secret == null) || GitHubWebhookUtility.verifySignature(body, signature, secret)) {
-            executorService.execute(new Runnable(){
-            
+            executorService.execute(new Runnable() {
+
                 @Override
-                public void run() {                    
+                public void run() {
                     final JsonReader rdr = Json.createReader(new StringReader(body));
                     final JsonObject obj = rdr.readObject();
                     final String path = obj.getJsonObject("repository").getString("full_name");
 
                     try {
-						new UploadRepoGraph(new UploadRepoGraphArgs() {
-                        @Override
-                        public String token() {
-                            return config.getLiterals(Ontology.token).next().getLexicalForm();
-                        }
+                        new UploadRepoGraph(new UploadRepoGraphArgs() {
+                            @Override
+                            public String token() {
+                                return config.getLiterals(Ontology.token).next().getLexicalForm();
+                            }
 
-                        @Override
-                        public String repository() {
-                            return path;
-                        }
+                            @Override
+                            public String repository() {
+                                return path;
+                            }
 
-                        @Override
-                        public String queryEndpoint() {
-                            GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
-                            return ((IRI) sparqlEndpoint.getNode()).getUnicodeString();
-                        }
-
-                        @Override
-                        public String updateEndpoint() {
-                            GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
-                            Iterator<RDFTerm> updateEndpoints = sparqlEndpoint.getObjects(Ontology.updateEndpoint);
-                            if (updateEndpoints.hasNext()) {
-                                return ((IRI) updateEndpoints.next()).getUnicodeString();
-                            } else {
+                            @Override
+                            public String queryEndpoint() {
+                                GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
                                 return ((IRI) sparqlEndpoint.getNode()).getUnicodeString();
                             }
-                        }
 
-                        @Override
-                        public String userName() {
-                            return configUtils.getUserName();
-                        }
+                            @Override
+                            public String updateEndpoint() {
+                                GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
+                                Iterator<RDFTerm> updateEndpoints = sparqlEndpoint.getObjects(Ontology.updateEndpoint);
+                                if (updateEndpoints.hasNext()) {
+                                    return ((IRI) updateEndpoints.next()).getUnicodeString();
+                                } else {
+                                    return ((IRI) sparqlEndpoint.getNode()).getUnicodeString();
+                                }
+                            }
 
-                        @Override
-                        public String password() {
-                            return configUtils.getPassword();
-                        }
+                            @Override
+                            public String userName() {
+                                return configUtils.getUserName();
+                            }
 
-                        @Override
-                        public boolean supressFileExtensions() {
-                            return true;
-                        }
+                            @Override
+                            public String password() {
+                                return configUtils.getPassword();
+                            }
 
-                    }).getAndUpload();
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+                            @Override
+                            public boolean supressFileExtensions() {
+                                return true;
+                            }
+
+                        }).getAndUpload();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             });
             return Response.noContent().build();
