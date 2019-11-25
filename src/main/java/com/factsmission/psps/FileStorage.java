@@ -47,7 +47,7 @@ public class FileStorage {
     
     public FileStorage() {
         Logger.getLogger(FileStorage.class.getName()).log(
-                Level.INFO, "initializing filde storage with: {0}", baseFileStorage);
+                Level.INFO, "initializing file storage with: {0}", baseFileStorage);
     }
 
     public void put(IRI iri, byte[] bytes) throws IOException {
