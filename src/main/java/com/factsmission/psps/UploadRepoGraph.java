@@ -62,14 +62,15 @@ public class UploadRepoGraph {
     }
 
     public void getAndUpload() throws IOException, ParseException {
-        RepositoryProcessor getRepoGraph = new RepositoryProcessor(arguments.repository(), arguments.token(), arguments.supressFileExtensions());
+        RepositoryProcessor repositoryProcessor = new RepositoryProcessor(arguments.repository(), arguments.token(), arguments.supressFileExtensions());
         IRI repoIri = new IRI("https://github.com/" + arguments.repository());
         Set<IRI> graphsFromRepoBeforeUpload = getGraphsWithSourceRepo(repoIri);
-        for (Entry<IRI, Graph> entry : getRepoGraph.getGraphs().entrySet()) {
+        for (Entry<IRI, Graph> entry : repositoryProcessor.getGraphs().entrySet()) {
             uploadGraph(entry.getKey().getUnicodeString(), entry.getValue());
         }
         graphsFromRepoBeforeUpload.removeAll(getGraphsWithSourceRepo(repoIri));
         dropGraphs(graphsFromRepoBeforeUpload);
+        executeUpdate(arguments.postUploadStatement());
     }
 
     private void dropGraphs(Set<IRI> graphsFromRepoBeforeUpload) throws IOException {
@@ -147,6 +148,23 @@ public class UploadRepoGraph {
         connection.setDoOutput(true);
         connection.setUseCaches(false);
         return connection;
+    }
+
+    private void executeUpdate(String statement) throws IOException {
+        final String mediaType = "application/sparql-update; charset=UTF-8";
+        HttpURLConnection httpURLConnection = getAuthenticatedStream(mediaType, new URL(arguments.updateEndpoint()));
+        try (OutputStream out = httpURLConnection.getOutputStream()) {
+            out.write(statement.getBytes("utf-8"));
+            out.flush();
+        }
+        int responseCode = httpURLConnection.getResponseCode();
+        if (responseCode >= 300) {
+            throw new IOException("Unexpected "+responseCode+" "+httpURLConnection.getResponseMessage());
+        }
+        InputStream in = httpURLConnection.getInputStream();
+        for (int i = in.read(); i != -1; i = in.read()) {
+            System.out.write(i);
+        }
     }
 
 }

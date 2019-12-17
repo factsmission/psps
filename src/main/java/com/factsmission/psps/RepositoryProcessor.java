@@ -201,7 +201,7 @@ public class RepositoryProcessor {
         }
         return result;
     }
-
+    
     private void processRepository() throws IOException {
         System.out.println("Loading RDF data from " + repositoryName);
         String[] branches = repository.getBranches();

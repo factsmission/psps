@@ -87,5 +87,14 @@ public interface UploadRepoGraphArgs {
         defaultValue = "true",
         description = "Supress the file extensions of the RDF files in github"
     )
-	public boolean supressFileExtensions();
+    public boolean supressFileExtensions();
+    
+    @CommandLine (
+        longName ="postUploadStatement",
+        shortName = "PUS",
+        required = false,
+        defaultValue = "",
+        description = "SPARQL Statement to be executed after uploading data"
+    )
+    public String postUploadStatement();
 }

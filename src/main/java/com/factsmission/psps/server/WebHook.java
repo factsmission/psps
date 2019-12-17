@@ -121,6 +121,11 @@ public class WebHook {
                             public boolean supressFileExtensions() {
                                 return true;
                             }
+                            
+                            @Override
+                            public String postUploadStatement() {
+                                return config.getLiterals(Ontology.postUploadStatement).next().getLexicalForm();
+                            }
 
                         }).getAndUpload();
                     } catch (Exception e) {
