@@ -53,90 +53,99 @@ import solutions.linked.slds.ConfigUtils;
  */
 @Path("/webhook")
 public class WebHook {
-
+    
     private final GraphNode config;
     private final ConfigUtils configUtils;
     private final static ExecutorService executorService = Executors.newFixedThreadPool(1);
-
+    boolean running = false;
+    
     public WebHook(GraphNode config) {
         this.config = config;
         this.configUtils = new ConfigUtils(config);
     }
-
+    
     @POST
     public Response receive(@HeaderParam("x-hub-signature") String signature, String body) throws Exception {
-        final String secret = config.getLiterals(Ontology.webhookSecret).hasNext()
-                ? config.getLiterals(Ontology.webhookSecret).next().getLexicalForm()
-                : null;
-
-        if ((secret == null) || GitHubWebhookUtility.verifySignature(body, signature, secret)) {
-            executorService.execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    final JsonReader rdr = Json.createReader(new StringReader(body));
-                    final JsonObject obj = rdr.readObject();
-                    final String path = obj.getJsonObject("repository").getString("full_name");
-
-                    try {
-                        new UploadRepoGraph(new UploadRepoGraphArgs() {
-                            @Override
-                            public String token() {
-                                return config.getLiterals(Ontology.token).next().getLexicalForm();
-                            }
-
-                            @Override
-                            public String repository() {
-                                return path;
-                            }
-
-                            @Override
-                            public String queryEndpoint() {
-                                GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
-                                return ((IRI) sparqlEndpoint.getNode()).getUnicodeString();
-                            }
-
-                            @Override
-                            public String updateEndpoint() {
-                                GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
-                                Iterator<RDFTerm> updateEndpoints = sparqlEndpoint.getObjects(Ontology.updateEndpoint);
-                                if (updateEndpoints.hasNext()) {
-                                    return ((IRI) updateEndpoints.next()).getUnicodeString();
-                                } else {
+        if (!running) {
+            running = true;
+            
+            final String secret = config.getLiterals(Ontology.webhookSecret).hasNext()
+                    ? config.getLiterals(Ontology.webhookSecret).next().getLexicalForm()
+                    : null;
+            
+            if ((secret == null) || GitHubWebhookUtility.verifySignature(body, signature, secret)) {
+                executorService.execute(new Runnable() {
+                    
+                    @Override
+                    public void run() {
+                        final JsonReader rdr = Json.createReader(new StringReader(body));
+                        final JsonObject obj = rdr.readObject();
+                        final String path = obj.getJsonObject("repository").getString("full_name");
+                        
+                        try {
+                            new UploadRepoGraph(new UploadRepoGraphArgs() {
+                                @Override
+                                public String token() {
+                                    return config.getLiterals(Ontology.token).next().getLexicalForm();
+                                }
+                                
+                                @Override
+                                public String repository() {
+                                    return path;
+                                }
+                                
+                                @Override
+                                public String queryEndpoint() {
+                                    GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
                                     return ((IRI) sparqlEndpoint.getNode()).getUnicodeString();
                                 }
-                            }
-
-                            @Override
-                            public String userName() {
-                                return configUtils.getUserName();
-                            }
-
-                            @Override
-                            public String password() {
-                                return configUtils.getPassword();
-                            }
-
-                            @Override
-                            public boolean supressFileExtensions() {
-                                return true;
-                            }
-                            
-                            @Override
-                            public String postUploadStatement() {
-                                return config.getLiterals(Ontology.postUploadStatement).next().getLexicalForm();
-                            }
-
-                        }).getAndUpload();
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                                
+                                @Override
+                                public String updateEndpoint() {
+                                GraphNode sparqlEndpoint = configUtils.getSparqlEndpointNode();
+                                    Iterator<RDFTerm> updateEndpoints = sparqlEndpoint.getObjects(Ontology.updateEndpoint);
+                                    if (updateEndpoints.hasNext()) {
+                                        return ((IRI) updateEndpoints.next()).getUnicodeString();
+                                    } else {
+                                        return ((IRI) sparqlEndpoint.getNode()).getUnicodeString();
+                                    }
+                                }
+                                
+                                @Override
+                                public String userName() {
+                                    return configUtils.getUserName();
+                                }
+                                
+                                @Override
+                                public String password() {
+                                    return configUtils.getPassword();
+                                }
+                                
+                                @Override
+                                public boolean supressFileExtensions() {
+                                    return true;
+                                }
+                                
+                                @Override
+                                public String postUploadStatement() {
+                                    return config.getLiterals(Ontology.postUploadStatement).next().getLexicalForm();
+                                }
+                                
+                            }).getAndUpload();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
-            });
-            return Response.noContent().build();
+                });
+                running = false;
+                return Response.noContent().build();
+            } else {
+                running = false;
+                return Response.status(Status.UNAUTHORIZED).build();
+            }
         } else {
-            return Response.status(Status.UNAUTHORIZED).build();
+            return Response.status(Status.OK).entity("Hold my beer").build();
         }
-
+        
     }
 }
