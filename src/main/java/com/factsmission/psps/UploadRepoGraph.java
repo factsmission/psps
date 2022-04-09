@@ -96,9 +96,13 @@ public class UploadRepoGraph {
                 + "?branch <"+Ontology.repository.getUnicodeString()+"> <"+iri.getUnicodeString()+">"
                 + "} }";
         Set<IRI> result = new HashSet<>();
-        List<Map<String, RDFTerm>> results = sparqlClient.queryResultSet(query);
-        for (Map<String, RDFTerm> row : results) {
-            result.addAll(getGraphsWithSourceBranch((IRI) row.get("branch")));
+        try {
+            List<Map<String, RDFTerm>> results = sparqlClient.queryResultSet(query);
+            for (Map<String, RDFTerm> row : results) {
+                result.addAll(getGraphsWithSourceBranch((IRI) row.get("branch")));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return result;
     }

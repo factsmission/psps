@@ -24,6 +24,9 @@
 package com.factsmission.psps.server;
 
 import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -32,6 +35,9 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+
+import com.factsmission.psps.Ontology;
+
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.clerezza.rdf.utils.GraphNode;
@@ -44,6 +50,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.clerezza.commons.rdf.Literal;
 
 import solutions.linked.slds.ConfigUtils;
 
@@ -57,23 +64,31 @@ public class SparqlProxy {
     private final GraphNode config;
     private final ConfigUtils configUtils;
     private final CloseableHttpClient httpclient;
+    private final Set<String> proxiedMethods = new HashSet<>();
 
     public SparqlProxy(GraphNode config) {
         this.config = config;
         this.configUtils = new ConfigUtils(config);
+        Iterator<Literal> methods = config.getLiterals(Ontology.proxiedMethod);
+        while (methods.hasNext()) {
+            this.proxiedMethods.add(methods.next().getLexicalForm().toUpperCase());
+        }
         final HttpClientBuilder hcb = HttpClientBuilder.create();
         httpclient = hcb.build();
     }
 
     @POST
     public Response handlePost(@Context HttpHeaders httpHeaders, InputStream body) throws Exception {
+        if (!this.proxiedMethods.contains("POST")) {
+            return Response.status(Response.Status.METHOD_NOT_ALLOWED).build();
+        }
         final HttpPost httpPost = new HttpPost(
-            configUtils.getSparqlEndpointUri().getUnicodeString());
+                configUtils.getSparqlEndpointUri().getUnicodeString());
         final String contentType = httpHeaders.getHeaderString("Content-Type");
         httpPost.setHeader("Content-Type", contentType);
         final String acceptType = httpHeaders.getHeaderString("Accept");
         httpPost.setHeader("Accept", acceptType);
-        httpPost.setEntity(new InputStreamEntity(body));    
+        httpPost.setEntity(new InputStreamEntity(body));
         try (CloseableHttpResponse upResponse = httpclient.execute(httpPost)) {
             ResponseBuilder builder = Response.status(upResponse.getStatusLine().getStatusCode());
             HttpEntity upEntity = upResponse.getEntity();
@@ -82,11 +97,11 @@ public class SparqlProxy {
             try {
                 bytes = IOUtils.toByteArray(upEntity.getContent());
             } catch (ConnectionClosedException ex) {
-                System.err.println("Reading answer from fuseki: "+ex.toString());
+                System.err.println("Reading answer from fuseki: " + ex.toString());
             }
             builder.entity(bytes);//new ByteArrayInputStream("huolllo".getBytes()));//
             return builder.build();
-        }        
+        }
     }
 
     @GET
@@ -94,7 +109,7 @@ public class SparqlProxy {
         String fullRequestURI = uriInfo.getRequestUri().toString();
         String queryPart = fullRequestURI.substring(fullRequestURI.indexOf('?'));
         final HttpGet httpGet = new HttpGet(
-            configUtils.getSparqlEndpointUri().getUnicodeString()+queryPart);  
+                configUtils.getSparqlEndpointUri().getUnicodeString() + queryPart);
         final String acceptType = httpHeaders.getHeaderString("Accept");
         httpGet.setHeader("Accept", acceptType);
         try (CloseableHttpResponse upResponse = httpclient.execute(httpGet)) {
@@ -105,10 +120,10 @@ public class SparqlProxy {
             try {
                 bytes = IOUtils.toByteArray(upEntity.getContent());
             } catch (ConnectionClosedException ex) {
-                System.err.println("Reading answer from fuseki: "+ex.toString());
+                System.err.println("Reading answer from fuseki: " + ex.toString());
             }
-            builder.entity(bytes);//new ByteArrayInputStream("huolllo".getBytes()));//
+            builder.entity(bytes);// new ByteArrayInputStream("huolllo".getBytes()));//
             return builder.build();
-        }        
+        }
     }
 }

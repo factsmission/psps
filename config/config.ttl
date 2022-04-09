@@ -24,6 +24,8 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 INSERT DATA { GRAPH <urn:meta> { [] rdfs:comment "Triple added with postUploadStatement" } }
 """.
 
+<> psps:proxiedMethod "GET", "POST".
+
 <http://fuseki:3030/psps/sparql>
     slds:userName "admin" ;
     slds:password "pw123";

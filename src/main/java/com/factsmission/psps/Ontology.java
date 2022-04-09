@@ -36,4 +36,6 @@ public class Ontology {
     public static final IRI latestCommit = new IRI("https://schema.factsmission.com/psps/latestCommit");
     public static final IRI webhookSecret = new IRI("https://schema.factsmission.com/psps/webhookSecret");
     public static final IRI postUploadStatement = new IRI("https://schema.factsmission.com/psps/postUploadStatement");
+
+    public static final IRI proxiedMethod = new IRI("https://schema.factsmission.com/psps/proxiedMethod");
 }
